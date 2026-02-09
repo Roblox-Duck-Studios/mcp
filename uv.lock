@@ -6,6 +6,8 @@ requires-python = ">=3.12"
 members = [
     "documentation",
     "mcp-monorepo",
+    "react-roblox",
+    "roblox-ts",
 ]
 
 [[package]]
@@ -515,6 +517,17 @@ wheels = [
 ]
 
 [[package]]
+name = "react-roblox"
+version = "0.1.0"
+source = { virtual = "react-roblox" }
+dependencies = [
+    { name = "mcp", extra = ["cli"] },
+]
+
+[package.metadata]
+requires-dist = [{ name = "mcp", extras = ["cli"], specifier = ">=1.26.0" }]
+
+[[package]]
 name = "referencing"
 version = "0.37.0"
 source = { registry = "https://pypi.org/simple" }
@@ -540,6 +553,17 @@ sdist = { url = "https://files.pythonhosted.org/packages/74/99/a4cab2acbb884f80e
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ef/45/615f5babd880b4bd7d405cc0dc348234c5ffb6ed1ea33e152ede08b2072d/rich-14.3.2-py3-none-any.whl", hash = "sha256:08e67c3e90884651da3239ea668222d19bea7b589149d8014a21c633420dbb69", size = 309963, upload-time = "2026-02-01T16:20:46.078Z" },
 ]
+
+[[package]]
+name = "roblox-ts"
+version = "0.1.0"
+source = { virtual = "roblox-ts" }
+dependencies = [
+    { name = "mcp", extra = ["cli"] },
+]
+
+[package.metadata]
+requires-dist = [{ name = "mcp", extras = ["cli"], specifier = ">=1.26.0" }]
 
 [[package]]
 name = "rpds-py"

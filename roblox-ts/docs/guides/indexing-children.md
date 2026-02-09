@@ -1,0 +1,98 @@
+New roblox-ts users often ask, "How can I index a child in the game like `game.Workspace.Zombie`?"
+
+The problem here is that you are making an assumption that `Zombie` is something that exists inside `Workspace`. In Roblox, if you try to index the child of an instance that does not exist, it results in an error. Even if roblox-ts allowed you to do this, `Zombie` would be of type `Instance` which is not particularly helpful!
+
+## Creating `services.d.ts`
+
+The simplest solution to this problem is to extend the types of your services to describe the state of your DataModel.
+
+We can do this through "ambient type declarations". An ambient type definition file is a `.d.ts` file which contains no imports or exports. This file becomes global and the types are available in every file without importing.
+
+We can name this file anything and put it anywhere in `src`, but for this example we'll stick to `src/services.d.ts`.
+
+```ts title="src/services.d.ts"
+interface Workspace extends Instance {
+	Zombie: Model;
+}
+```
+
+```ts
+// some other file
+// highlight-start
+print(Workspace.Zombie);
+// highlight-end
+```
+> **Note:** This example needs the `@rbxts/services` package, which is not included by default. If you haven't already, run `npm install @rbxts/services` to install it.
+[playground-friendly example](https://roblox-ts.com/playground/#code/KYDwDg9gTgLgBAbwL4G4BQATYBjANgQymDgHNcIAjfXRNOeuASwDsZgoAzfbYgdWgDWAZzDdioNswxC4ASWZCY+Zj1oN1cAFoQAthUbAAXHACyELLnTqkaG2mwQF8AF679xALyl8O4ADp+KGFRHj9tPQN0MCgWGAAKVwjgAEp0IA)
+
+If you want to define children inside of Zombie, you can do this with an intersection object type:
+
+```ts title="src/services.d.ts"
+interface Workspace extends Instance {
+	Zombie: Model & {
+		Humanoid: Humanoid;
+	};
+}
+```
+
+```ts
+// some other file
+// highlight-start
+print(Workspace.Zombie.Humanoid);
+// highlight-end
+```
+
+[playground-friendly example](https://roblox-ts.com/playground/#code/KYDwDg9gTgLgBAbwL4G4BQATYBjANgQymDgHNcIAjfXRNASAEsA7GYKAM322IHVoBrAM5guxUKyYZBcAJJNBMfE2606dAFoQAthQbAAXHACyELDQBkqtQAkArlqUQGGQ3YdMnGdGtT0kafzRsCHl4AAt7R2c4AF5SfC1gADo+KCERbiTNHT0ktyivNDAoZhgACgj3TwBKdCA)
+
+> **Note:** If you're having compiler errors where the property is still not defined on an object, even after creating a types file, you might need to restart the compiler!
+
+## "rbxts-object-to-tree" plugin by Validark
+
+### Usage
+
+Writing out long `services.d.ts` files is tedious! And a mismatch between your type definition files and actual game could be dangerous.
+
+Luckily, there's an existing plugin by Validark called "rbxts-object-to-tree" that you can use to automatically generate these typings.
+
+https://www.roblox.com/library/3379119778/rbxts-object-to-tree
+
+1. Simply select the service you want to generate typings for in the Explorer pane.
+
+![](../../static/img/guides/indexing-children/ReplicatedStorage.png)
+
+2. Click "TS types" and "GENERATE"
+
+![](../../static/img/guides/indexing-children/rbxts-object-to-tree.png)
+
+3. Your type definition file will be created in Lighting and you can copy that over into `src/services.d.ts`
+
+![](../../static/img/guides/indexing-children/type-definition.png)
+
+```ts title="types/ReplicatedStorage.d.ts"
+interface ReplicatedStorage extends Instance {
+	Zombie: Model & {
+		["Left Leg"]: Part;
+		Humanoid: Humanoid;
+		["Right Leg"]: Part;
+		Head: Part & {
+			Mesh: SpecialMesh;
+			Face: Decal;
+		};
+		Torso: Part;
+		HumanoidRootPart: Part;
+		["Right Arm"]: Part;
+		["Left Arm"]: Part;
+		["Body Colors"]: BodyColors;
+	};
+}
+```
+
+### io-serve
+
+Alternatively, to make things even more automatic you can use [io-serve](https://www.npmjs.com/package/io-serve) by Evaera to automatically write the .d.ts files to your filesystem.
+
+First, make sure HTTP requests are enabled for your game in Game Settings or by running `game.HttpService.HttpEnabled = true` in the command bar.
+
+Then, simply just run `npx io-serve` in your project folder before hitting "GENERATE" in rbxts-object-to-tree. `npx` will automatically download and then run io-serve for you.
+
+This will generate a file located at `types/ReplicatedStorage.d.ts`.

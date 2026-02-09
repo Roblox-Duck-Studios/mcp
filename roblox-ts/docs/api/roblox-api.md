@@ -1,0 +1,243 @@
+roblox-ts provides typings for the Roblox API which are partially handwritten and partially automatically generated.
+
+In general, everything from the Roblox API is available for use, unless it is deprecated or conflicts with TypeScript.
+
+## Values
+
+### Globals
+
+All global values from the Roblox API are present in roblox-ts typings.
+
+```ts
+print("Hello World!");
+```
+
+```ts
+const zero = math.sin(math.pi);
+```
+
+```ts
+coroutine.wrap(() => {
+    print("A");
+    wait(1);
+    print("B");
+})();
+```
+
+You can find a list of available globals and libraries on the [Roblox Engine API Reference](https://create.roblox.com/docs/reference/engine).
+
+Parts of `table` and `string` have been intentionally omitted.
+
+### Constructors
+
+`.new()` functions (like `Vector3.new()` or `CFrame.new()`) should instead be called with the `new` operator.
+
+`new T(...)` will always compile to `T.new(...)`.
+
+```ts
+const v3 = new Vector3(1, 2, 3); // compiles to Vector3.new(1, 2, 3)
+print(v3.X, v3.Y, v3.Z); // 1 2 3
+```
+
+```ts
+const part = new Instance("Part");
+print(part.Color);
+```
+
+### nil
+
+`undefined` is a direct replacement for `nil`. It can be used both as a type and a value.
+
+## Types
+
+### Provided Types
+
+Every Roblox class (`Instance`, `Part`, `Humanoid`, `Workspace`, etc.) is provided as a global/ambient type. You can use these types to describe variables, function parameters, function return types, and just about anything else in your code.
+
+```ts
+// note: The type Part could be inferred here if not provided
+const part: Part = new Instance("Part");
+print(part.Size);
+```
+
+```ts
+function takesBasePart(basePart: BasePart) {
+    return basePart.Size.X + basePart.Size.Y + basePart.Size.Z;
+}
+
+// we can use any type which inherits from BasePart!
+takesBasePart(new Instance("Seat"));
+takesBasePart(new Instance("Part"));
+takesBasePart(new Instance("WedgePart"));
+
+// Humanoid does not inherit from BasePart, so this will error!
+// takesBasePart(new Instance("Humanoid"));
+```
+
+### RemoteEvent Types
+
+New roblox-ts users are usually confused why `RemoteEvent.OnServerEvent` only allows `unknown` arguments.
+
+```ts
+const remoteEvent = new Instance("RemoteEvent");
+
+// this works fine
+remoteEvent.OnClientEvent.Connect((points: number) => {});
+
+// changing unknown to number causes an error!
+remoteEvent.OnServerEvent.Connect((player: Player, points: unknown) => {});
+```
+
+The reason for this is because client-to-server networking _cannot_ be trusted. Exploiters or cheaters in your game can fire your RemoteEvent functions with whatever data they want.
+
+If your code is expecting `points` to be a `number`, but the client sends a `nil` value, the server will error. By sending a large number of requests very quickly which result in errors, an exploiter could crash your game server and disconnect all of your players.
+
+Instead, you should assume your inputs can be any possible value and validate the type at runtime using the `typeIs` macro:
+```ts
+const remoteEvent = new Instance("RemoteEvent");
+
+remoteEvent.OnServerEvent.Connect((player: Player, points: unknown) => {
+	if (!typeIs(points, "number")) {
+		return;
+	}
+	// do something with points
+});
+```
+
+You can also verify the arguments with a type validation package like [`@rbxts/t`](https://www.npmjs.com/package/@rbxts/t).
+
+Alternatively, the community has created a few networking libraries which make the experience much nicer!
+- [@rbxts/net](https://www.npmjs.com/package/@rbxts/net)
+- [@rbxts/networked-signals](https://www.npmjs.com/package/@rbxts/networked-signals)
+- [@rbxts/remo](https://www.npmjs.com/package/@rbxts/remo)
+
+### Exceptions
+
+Deprecated types are usually not provided. Exceptions to this rule are made for API members which do not have a non-deprecated functional equivalent.
+
+One notable exception: `Instance.Changed` is not provided as it conflicts with inheritance. Usually, you want to use `Instance.GetPropertyChangedSignal()` instead.
+
+```ts
+Workspace.GetPropertyChangedSignal("DistributedGameTime").Connect(() => {
+	print(Workspace.DistributedGameTime);
+});
+```
+
+If you _must_ use `Instance.Changed`, you can workaround this by asserting an intersection type with `ChangedSignal`:
+```ts
+function foo(part: Part) {
+    (part as Part & ChangedSignal).Changed.Connect(name => {})
+}
+```
+
+## Utility Interfaces
+
+There are a few key global interfaces which make manipulating types easier:
+
+### Services
+
+`Services` is an interface consisting of a mapping of string name to type for every Roblox service which you can fetch with `game:GetService("ServiceName")`.
+
+```ts
+interface Services {
+	AnalyticsService: AnalyticsService;
+	AppUpdateService: AppUpdateService;
+	AssetCounterService: AssetCounterService;
+	AssetDeliveryProxy: AssetDeliveryProxy;
+	// ... many more services!
+}
+```
+
+You can get a union of all service names with `keyof Services`.
+And you can get a union of all service types with `Services[keyof Services]`.
+
+```ts
+type AllServiceNames = keyof Services;
+type AllServices = Services[keyof Services];
+```
+
+### CreatableInstances
+
+`CreatableInstances` is an interface consisting of a mapping of string name to type for every Roblox instance which can be created with `Instance.new("ClassName")`.
+
+```ts
+interface CreatableInstances {
+	Accessory: Accessory;
+	Accoutrement: Accoutrement;
+	Actor: Actor;
+	AlignOrientation: AlignOrientation;
+	// ... many more instances!
+}
+```
+
+You can get a union of all creatable instance names with `keyof CreatableInstances`.
+And you can get a union of all creatable instance types with `CreatableInstances[keyof CreatableInstances]`.
+
+```ts
+type AllCreatableInstanceNames = keyof CreatableInstances;
+type AllCreatableInstances = CreatableInstances[keyof CreatableInstances];
+```
+
+### AbstractInstances
+
+`AbstractInstances` is an interface consisting of a mapping of string name to type for every Roblox instance which will _never_ be created. Generally, these are useful for functions that check inheritance like `Instance:IsA("ClassName")`.
+
+```ts
+interface AbstractInstances {
+	BackpackItem: BackpackItem;
+	BasePart: BasePart;
+	BasePlayerGui: BasePlayerGui;
+	BaseScript: BaseScript;
+	// ... many more instances!
+}
+```
+
+You can get a union of all abstract instance names with `keyof AbstractInstances`.
+And you can get a union of all abstract instance types with `AbstractInstances[keyof AbstractInstances]`.
+
+```ts
+type AllAbstractInstanceNames = keyof AbstractInstances;
+type AllAbstractInstances = AbstractInstances[keyof AbstractInstances];
+```
+
+### Instances
+
+`Instances` is an interface consisting of a mapping of string name to type for every Roblox instance. It inherits from `Services`, `CreatableInstances`, and `AbstractInstances`. `Instances` and also includes any type of Instance which:
+- cannot be created with `Instance.new("ClassName")`
+- cannot be fetched with `game:GetService("ServiceName")`
+- but _can_ be given a reference to
+
+Examples:
+- `DataModel` is a class that cannot be created or fetched with GetService, but is given by the `game` global value
+- `AnimationTrack` can only be given a reference to via `:LoadAnimation()` from `Humanoid` or `AnimationTrack`
+
+```ts
+interface Instances extends Services, CreatableInstances, AbstractInstances {
+	AnimationTrack: AnimationTrack;
+	BaseWrap: BaseWrap;
+	CatalogPages: CatalogPages;
+	DataModel: DataModel;
+	// ... many more instances!
+}
+```
+
+You can get a union of all instance names with `keyof Instances`.
+And you can get a union of all instance types with `Instances[keyof Instances]`.
+
+```ts
+type AllInstanceNames = keyof Instances;
+type AllInstances = Instances[keyof Instances];
+```
+
+### Usage with Generics
+
+You can use any of these utility interfaces with generic functions. This is useful for taking an argument string and returning a matching instance type.
+
+```ts
+
+function getDescendantsWhichIsA(parent: Instance, className: T): Instances[T][] {
+	return parent.GetDescendants().filter((descendant): descendant is Instances[T] => descendant.IsA(className));
+}
+
+const humanoidsInWorkspace: Array = getDescendantsWhichIsA(Workspace, "Humanoid");
+```

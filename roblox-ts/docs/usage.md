@@ -1,0 +1,27 @@
+The following is a reference for how to use the roblox-ts command line interface.
+
+This can be displayed with `rbxtsc --help`.
+
+```
+roblox-ts - A TypeScript-to-Luau Compiler for Roblox
+
+Commands:
+  rbxtsc build  Build a project  [default]
+
+Options:
+  -p, --project                project path  [string] [default: "."]
+  -w, --watch                  enable watch mode  [boolean] [default: false]
+      --usePolling             use polling for watch mode  [boolean] [default: false]
+      --verbose                enable verbose logs  [boolean] [default: false]
+      --noInclude              do not copy include files  [boolean] [default: false]
+      --logTruthyChanges       logs changes to truthiness evaluation from Lua truthiness rules  [boolean] [default: false]
+      --writeOnlyChanged       [boolean] [default: false]
+	  --writeTransformedFiles  writes resulting TypeScript ASTs after transformers to out directory [boolean] [default: false]
+	  --optimizedLoops         [boolean] [default: false]
+      --type                   override project type  [choices: "game", "model", "package"]
+  -i, --includePath            folder to copy runtime files to  [string]
+      --rojo                   manually select Rojo project file  [string]
+	  --allowCommentDirectives [boolean] [default: false]
+  -h, --help                   show help information  [boolean]
+  -v, --version                show version information  [boolean]
+```

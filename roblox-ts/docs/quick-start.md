@@ -1,0 +1,11 @@
+> **Note:** Feel free to ask us questions in our [Discord server's #help channel](https://discord.roblox-ts.com)!
+
+roblox-ts makes it _really_ easy to get started!
+
+1. Run `npm init roblox-ts` command to start the interactive project setup tool
+1. Run `npx rbxtsc -w` to start watch mode
+1. In another terminal, run `rojo serve` to start Rojo
+1. Open a Roblox Studio place and connect your Rojo plugin
+1. Write code! :tada:
+
+[If you need more help, you can find a detailed guide here.](./setup-guide)

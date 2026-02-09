@@ -1,0 +1,106 @@
+## Introduction
+
+The role of roblox-ts is to turn TypeScript (`.ts`) files into Luau files (`.lua`). That alone isn't very useful! You need to move the files into Roblox Studio to be able to use them for a game, plugin, model, etc.
+
+To do this, you can use [Rojo](https://rojo.space/)!
+
+Rojo takes files from your local filesystem and will either:
+- turn them into a single Roblox file (`.rbxm`, `.rbxl`, `.rbxmx`, or `.rbxlx`) via `rojo build`
+- sync them into an open Roblox Studio session via `rojo serve`
+
+Rojo uses a `default.project.json` file to describe how files should be organized within a Roblox file.
+
+> **Note:** Your `default.project.json` file should have all `"$path"` fields relative to your `outDir` (which is the `"out"` folder by default).
+
+The workflow should look like this:
+
+`.ts` files in `src`
+
+roblox-ts via `rbxtsc`
+
+`.lua` files in `out`
+
+Rojo via `rojo build` or `rojo serve`
+
+Roblox Studio :tada:
+
+roblox-ts will use your `project.json` file to understand how TypeScript (`.ts`) files eventually end up inside of Roblox Studio. This is primarily used for compiling import statements.
+
+To use a different `project.json` file instead of `default.project.json` for compiling, you can use the `--rojo` flag:
+```bash
+rbxtsc --rojo other.project.json
+```
+
+## Customization
+
+Like any other Rojo project, you can organize a roblox-ts project however you'd like with a few restrictions:
+- The `include` folder and `node_modules` folder must be in a place that is visible to both the client and server
+- All `"$path"` fields should be relative to your `outDir` (which is the `"out"` folder by default)
+
+By default, the `default.project.json` file should look something like this (truncated):
+```json
+{
+	"name": "roblox-ts-game",
+	"tree": {
+		"$className": "DataModel",
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+			"TS": {
+				"$path": "out/server" // server folder goes in ServerScriptService.TS
+			}
+		},
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+			// this _must_ stay the same (except for the name)
+			"rbxts_include": {
+				"$path": "include",
+				"node_modules": {
+					"$path": "node_modules/@rbxts"
+				}
+			},
+			"TS": {
+				"$path": "out/shared" // shared folder goes in ReplicatedStorage.TS
+			}
+		},
+		"StarterPlayer": {
+			"$className": "StarterPlayer",
+			"StarterPlayerScripts": {
+				"$className": "StarterPlayerScripts",
+				"TS": {
+					"$path": "out/client" // client folder goes in StarterPlayer.StarterPlayerScripts.TS
+				}
+			}
+		}
+	}
+}
+```
+
+[You can find the full version here.](https://github.com/roblox-ts/create-roblox-ts/blob/master/templates/game/default.project.json)
+
+### Example
+
+Suppose you wanted to add scripts to `StarterPlayer.StarterCharacterScripts`.
+
+To do this, we'll need to add a folder to `src` (so that when we compile it will have a matching folder in `out`). We'll call this `src/character`.
+
+Then, we need to update our `default.project.json`:
+
+```json
+"StarterPlayer": {
+	"$className": "StarterPlayer",
+	"StarterPlayerScripts": {
+		"$className": "StarterPlayerScripts",
+		"TS": {
+			"$path": "out/client"
+		}
+	},
+	// highlight-start
+	"StarterCharacterScripts": {
+		"$className": "StarterCharacterScripts",
+		"TS": {
+			"$path": "out/character"
+		}
+	}
+	// highlight-end
+}
+```

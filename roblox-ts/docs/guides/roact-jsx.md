@@ -1,0 +1,237 @@
+> **Note:** The following guide assumes that you are already familiar with Roact. 
+Please refer to the [Roact documentation](https://roblox.github.io/roact/) for more information.
+
+## Introduction
+
+While roblox-ts allows you to use Roact just like you would in Luau, it also supports a "JSX" shorthand form.
+
+```tsx
+
+const element = (
+	
+		
+	
+);
+```
+
+```ts
+
+const element = Roact.createElement(
+	"Frame",
+	{
+		Size: new UDim2(1, 0, 1, 0),
+	},
+	{
+		Child: Roact.createElement("Frame", {
+			Size: new UDim2(1, 0, 1, 0),
+		}),
+	}
+);
+```
+
+[You can learn more about JSX here.](https://reactjs.org/docs/introducing-jsx.html)
+
+## Tag Names
+
+The "tag name" in JSX is the expression after the initial `
+For example, `frame` is the tag name of ``.
+
+You can use any Roblox UI class (host components) as a built-in JSX tag name by converting the name to lowercase.
+
+-   `Frame` → `frame`
+-   `UIListLayout` → `uilistlayout`
+-   `ViewportFrame` → `viewportframe`
+-   etc.
+
+Tag names can also be custom class components or functional components.
+
+**Custom components must use PascalCase.**
+
+```tsx
+
+interface MyComponentProps {
+	value: string;
+}
+
+function MyComponent(props: MyComponentProps) {
+	return ;
+}
+
+const element = ;
+```
+
+Tag names can also be a property access expression to use components which are nested inside of objects or namespaces.
+
+```tsx
+
+interface MyComponentProps {
+	value: string;
+}
+
+function MyComponent(props: MyComponentProps) {
+	return ;
+}
+
+const Components = {
+	MyComponent: MyComponent,
+};
+
+const element = ;
+```
+
+## Special Attributes
+
+### `Key` Attribute
+
+The `Key` attribute controls what your UI Instance will be named in the DataModel. This is the same as the `"Child"` key in this Luau example:
+
+```lua
+Roact.createElement("Frame", {
+	Child = Roact.createElement("Frame", {}),
+})
+```
+
+```tsx
+
+const element = (
+	
+		
+	
+);
+```
+
+If an element is given the `Key` attribute and it **not** a child of another element, it will be wrapped in a `Roact.Fragment`.
+
+```tsx
+
+const element = ;
+```
+
+### `Ref` Attribute
+
+The `Ref` attribute directly maps to the `[Roact.Ref]` key in Luau.
+
+```tsx
+
+const ref = Roact.createRef();
+const element = ;
+```
+
+### `Change` Attribute
+
+The `Change` attribute takes an object which maps property name -> changed function. The changed function value will be given a reference `rbx` to the rendered UI instance.
+
+**Note the double curly braces `{{` and `}}`.**
+
+```tsx
+
+const element = (
+	 print(`${rbx.GetFullName()} changed Position!`),
+		}}
+	/>
+);
+```
+
+### `Event` Attribute
+
+The `Event` attribute takes an object which maps property name -> event connection function. The event connection function value will be given a reference `rbx` to the rendered UI instance followed by the rest of the event arguments.
+
+**Note the double curly braces `{{` and `}}`.**
+
+```tsx
+
+const element = (
+	
+				print(`${rbx.GetFullName()} was clicked at (${x}, ${y})`),
+		}}
+	/>
+);
+```
+
+## Spreading into Attributes
+
+You can spread objects into attributes using the form `{...exp}` where `exp` is an object. 
+This is useful for creating reusable preset lists of properties.
+
+```tsx
+
+const MyStyle: Partial> = {
+	BackgroundColor3: new Color3(0, 0, 0),
+	BackgroundTransparency: 0.5,
+};
+
+const element = ;
+```
+
+## Spreading into Children
+
+You can spread arrays into children using the form `{...exp}` where `exp` is a `ReadonlyArray`.
+
+```tsx
+
+const listItems = new Array();
+for (let i = 0; i );
+}
+
+const element = {...listItems};
+```
+
+## Using Values as Children
+
+You can use values for children using the form `{exp}`. This is useful for programmatically creating children. The allowed values are:
+
+-   `Roact.Element`
+-   `ReadonlyArray`
+-   `ReadonlyMap`
+-   `boolean`
+-   `undefined`
+
+`boolean` and `undefined` values do not actually get put into the children props, but allowing the values here is useful for creating conditional children values.
+
+```tsx
+
+let condition = false;
+
+const element = (
+	
+		{condition && }
+		{condition ?  : undefined}
+	
+);
+```
+
+## Fragments
+
+To create a Fragment with JSX you can either use the tag name `Roact.Fragment`
+
+```tsx
+
+const fragment = ;
+```
+
+Or, you can use the shorthand form:
+
+```tsx
+
+const fragment = <>;
+```
+
+## Extending the default JSX elements
+
+By default the JSX supports all gui objects, however this may be limiting in cases where you want to manage other instances using Roact.
+Which elements are supported by JSX is determined by a global ``JSX`` namespace, to allow for more instances to be created this way you need to extend this global namespace.
+It is recommended to define this extension of the namespace in one central place for all instances.
+
+**Note the ``JSX.IntrinsicElement`` expects the type for an instance to be passed into it to allow for the properties & events to be typed correctly.**
+**Also note that, by convention, all Roblox instances should be lowercased.**
+```tsx
+declare global {
+	namespace JSX {
+		interface IntrinsicElements {
+			// Your instances into here
+			proximityprompt: JSX.IntrinsicElement;
+			folder: JSX.IntrinsicElement;
+		}
+	}
+}
+```

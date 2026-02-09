@@ -1,4 +1,4 @@
-"""Roblox-ts documentation MCP server."""
+"""React-Lua documentation MCP server."""
 
 import re
 from pathlib import Path
@@ -10,21 +10,23 @@ DOCS_DIR = Path(__file__).parent / "docs"
 
 # Documentation structure - maps key to local file path
 DOC_PATHS = {
-    # Main pages
-    "introduction": "introduction.md",
-    "quickStart": "quick-start.md",
-    "setupGuide": "setup-guide.md",
-    "usage": "usage.md",
-    # API docs
-    "robloxApi": "api/roblox-api.md",
+    # API Reference
+    "coreApi": "api/core.md",
+    "hooks": "api/hooks.md",
+    "contextApi": "api/context.md",
+    "advancedApi": "api/advanced.md",
     # Guides
-    "syncingWithRojo": "guides/syncing-with-rojo.md",
-    "usingExistingLuau": "guides/using-existing-luau.md",
-    "typeScriptPackages": "guides/typescript-packages.md",
-    "roactJsx": "guides/roact-jsx.md",
+    "gettingStarted": "guides/getting-started.md",
+    "componentPatterns": "guides/components.md",
+    "projectStructure": "guides/project-structure.md",
+    # Examples
+    "counterExample": "examples/counter.md",
+    "formExample": "examples/form.md",
+    "slitherProject": "examples/project-slither.md",
+    "uiLabsProject": "examples/project-ui-labs.md",
 }
 
-mcp = FastMCP("roblox-ts")
+mcp = FastMCP("react-roblox")
 
 
 def get_doc_content(file_path: str) -> str:
@@ -41,6 +43,13 @@ def get_doc_content(file_path: str) -> str:
         raise Exception(f"Failed to read documentation: {file_path} - {str(e)}")
 
 
+def extract_headings(content: str) -> list[str]:
+    """Extract headings from markdown content."""
+    pattern = r"^#{1,6}\s+(.+)$"
+    matches = re.findall(pattern, content, re.MULTILINE)
+    return matches
+
+
 def extract_code_examples(content: str) -> list[dict]:
     """Extract code blocks from markdown content."""
     pattern = r"```(\w+)?\n(.*?)```"
@@ -53,16 +62,9 @@ def extract_code_examples(content: str) -> list[dict]:
     return examples
 
 
-def extract_headings(content: str) -> list[str]:
-    """Extract headings from markdown content."""
-    pattern = r"^#{1,6}\s+(.+)$"
-    matches = re.findall(pattern, content, re.MULTILINE)
-    return matches
-
-
 @mcp.tool()
 def get_documentation(doc_key: str) -> str:
-    """Fetch specific roblox-ts documentation content by key."""
+    """Fetch specific React-Lua documentation content by key."""
     if doc_key not in DOC_PATHS:
         return f"Documentation not found: {doc_key}"
 
@@ -75,72 +77,33 @@ def get_documentation(doc_key: str) -> str:
 
 
 @mcp.tool()
-def search_documentation(query: str) -> str:
-    """Search roblox-ts documentation for specific topics or keywords."""
-    results = []
-    query_lower = query.lower()
-
-    for key, path in DOC_PATHS.items():
-        try:
-            content = get_doc_content(path)
-            content_lower = content.lower()
-
-            if query_lower in content_lower:
-                matches = content_lower.count(query_lower)
-                index = content_lower.find(query_lower)
-                start = max(0, index - 100)
-                end = min(len(content), index + 200)
-                snippet = "..." + content[start:end] + "..."
-
-                results.append({"path": path, "key": key, "snippet": snippet, "matches": matches})
-        except Exception:
-            continue
-
-    if not results:
-        return f'No results found for query: "{query}"'
-
-    results.sort(key=lambda x: x["matches"], reverse=True)
-
-    output = f'# Search Results for "{query}"\n\n'
-    output += f"Found {len(results)} result(s):\n\n"
-
-    for i, result in enumerate(results, 1):
-        output += f"## Result {i} (Matches: {result['matches']})\n"
-        output += f"**Path:** {result['path']}\n"
-        output += f"**Key:** {result['key']}\n\n"
-        output += f"{result['snippet']}\n\n---\n\n"
-
-    return output
-
-
-@mcp.tool()
 def list_documentation() -> str:
-    """List all available roblox-ts documentation pages with metadata."""
-    output = "# Available roblox-ts Documentation\n\n"
+    """List all available React-Lua documentation pages with metadata."""
+    output = "# Available React-Lua Documentation\n\n"
 
     # Group by category
-    categories = {}
+    categories = {
+        "api": [],
+        "guides": [],
+        "examples": [],
+    }
+
     for key, path in DOC_PATHS.items():
-        path_parts = path.split("/")
-        category = path_parts[0] if len(path_parts) > 1 else "main"
+        category = path.split("/")[0]
         title = re.sub(r"([A-Z])", r" \1", key).strip()
 
-        if category not in categories:
-            categories[category] = []
+        categories[category].append({"key": key, "path": path, "title": title})
 
-        categories[category].append({
-            "key": key,
-            "path": path,
-            "title": title,
-            "description": f"roblox-ts documentation: {title}",
-        })
+    # Output by category
+    category_names = {"api": "API Reference", "guides": "Guides", "examples": "Examples"}
 
-    for category, docs in sorted(categories.items()):
-        output += f"## {category.title()}\n\n"
-        for doc in docs:
-            output += f"- **{doc['title']}** (`{doc['key']}`)\n"
-            output += f"  Path: {doc['path']}\n"
-            output += f"  {doc['description']}\n\n"
+    for cat_key in ["api", "guides", "examples"]:
+        items = categories[cat_key]
+        if items:
+            output += f"## {category_names[cat_key]}\n\n"
+            for item in items:
+                output += f"- **{item['title']}** (`{item['key']}`)\n"
+                output += f"  Path: {item['path']}\n\n"
 
     return output
 
@@ -194,6 +157,49 @@ def get_documentation_outline(doc_key: str) -> str:
         return output
     except Exception as e:
         return f"Error: {str(e)}"
+
+
+@mcp.tool()
+def search_documentation(query: str) -> str:
+    """Search React-Lua documentation for specific topics or keywords."""
+    results = []
+    query_lower = query.lower()
+
+    for key, path in DOC_PATHS.items():
+        try:
+            content = get_doc_content(path)
+            content_lower = content.lower()
+
+            if query_lower in content_lower:
+                # Count matches
+                matches = content_lower.count(query_lower)
+
+                # Find snippet around first match
+                index = content_lower.find(query_lower)
+                start = max(0, index - 100)
+                end = min(len(content), index + 200)
+                snippet = "..." + content[start:end] + "..."
+
+                results.append({"path": path, "key": key, "snippet": snippet, "matches": matches})
+        except Exception:
+            continue
+
+    if not results:
+        return f'No results found for query: "{query}"'
+
+    # Sort by relevance
+    results.sort(key=lambda x: x["matches"], reverse=True)
+
+    output = f'# Search Results for "{query}"\n\n'
+    output += f"Found {len(results)} result(s):\n\n"
+
+    for i, result in enumerate(results, 1):
+        output += f"## Result {i} (Matches: {result['matches']})\n"
+        output += f"**Path:** {result['path']}\n"
+        output += f"**Key:** {result['key']}\n\n"
+        output += f"{result['snippet']}\n\n---\n\n"
+
+    return output
 
 
 def main():

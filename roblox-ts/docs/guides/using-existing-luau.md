@@ -1,0 +1,97 @@
+roblox-ts lets you use existing Luau scripts in your TypeScript codebase. All you have to do is define the types in a type declaration file (`.d.ts`).
+
+### Creating Type Declaration Files
+
+roblox-ts will copy any non-compiled file (anything that isn't a `.ts` or `.tsx` file) into your `outDir` (out). This lets you place `.lua` files in your `rootDir` (src) and they will be copied into the `outDir` (out) and then synced into Roblox Studio using Rojo.
+
+To create a type declaration file (`.d.ts`) for this `.lua` file, simply create a file next to it using the same name.
+
+![](../../static/img/guides/using-existing-luau/type-definition-pair.png)
+
+As an exception, if the name of your `.lua` file is `init.lua`, your type definition file needs to be named `index.d.ts`.
+
+### Modeling Module Return Values
+
+Luau scripts return a single value at the end in the form of:
+```lua
+local Module = {}
+
+-- define Module members
+
+return Module
+```
+
+To model this return value in TypeScript types, we can use an "Export Assignment" statement:
+
+```ts
+interface Module {
+	// define Module member types
+}
+
+// create a value from our type
+declare const Module: Module;
+
+```
+
+And you could import it as:
+
+```ts
+print(Module);
+```
+
+If a module uses a table return containing static fields/functions, it may be preferrable to use normal exports.
+
+```lua
+local MyConstants = {}
+
+MyConstants.Foo = "Bar"
+MyConstants.Secret = "hunter2"
+
+return MyConstants
+```
+
+Then your types could look like this:
+
+```ts
+```
+
+And you could import them as:
+
+```ts
+print(Foo, Secret);
+```
+
+### Typings for Custom Classes
+
+A common way to describe custom OOP classes is with a `MyClass` interface, `MyClassConstructor` interface, and a `MyClass` variable of type `MyClassConstructor`.
+
+```ts
+interface MyClass {
+	instanceProperty: string;
+	instanceMethod(): number;
+}
+
+interface MyClassConstructor {
+	new (): MyClass;
+	staticProperty: string;
+	staticMethod(): number;
+}
+
+declare const MyClass: MyClassConstructor;
+```
+
+Then in another file, you can use this as:
+
+```ts
+print(MyClass.staticProperty);
+print(MyClass.staticMethod());
+
+const myClass = new MyClass();
+print(myClass.instanceProperty);
+print(myClass.instanceMethod());
+```
+
+### Related Articles
+
+- [`LuaTuple`](./lua-tuple)
+- [Callbacks vs Methods](./callbacks-vs-methods)

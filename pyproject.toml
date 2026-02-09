@@ -13,4 +13,6 @@ dependencies = [
 [tool.uv.workspace]
 members = [
     "docs",
+    "react-roblox",
+    "roblox-ts",
 ]

@@ -1,0 +1,27 @@
+> **Note:** To publish roblox-ts packages, you'll need to join the "@rbxts" npm organization. [You can do that here.](../../join-org)
+
+## Getting Started
+
+Creating packages with roblox-ts is super easy!
+
+To start, just create an empty folder and run `npm init roblox-ts package` inside of it. This will generate a project scaffolding for your package. You can author your `.ts` files inside of the `src` folder.
+
+In `package.json`, you can edit a few different fields to configure your package:
+
+-   "name" - This _must_ begin with `@rbxts/` to be considered a valid roblox-ts package.
+-   "description"
+-   "main" - This should point to a `.lua` file in `out` which represents your package's entrypoint.
+-   "typings" - This should point to a `.d.ts` file in `out` which represents your package's entrypoint.
+-   "files" - An array of globs for what should be published to npm. Defaults to `["out"]`. You don't explicitly have to specify special files like `package.json`, `LICENSE` or `readme.md` here, as npm includes those by default.
+-   "repository" - If your package's source is public on something like GitHub, you should include a link to it in this field.
+-   "homepage" - If your package has online documentation, you should include a link to it in this field.
+-   "author" - Your own name or username.
+-   "license" - The license of your package's code. This should be the [SPDX license identifier](https://spdx.org/licenses/) that corresponds to your `LICENSE` file.
+
+## Testing Your Package
+
+The simplest way to test your package is with `npm pack`. This command will generate a `.tgz` file which can then be used from another project via `npm install ../../path/to/package.tgz`.
+
+> **Note:** When publishing a package for the first time, you might run into this issue:
+
+[npm publish errors with "npm error 402 Payment Required"](../faq/publish-as-public)

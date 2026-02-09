@@ -1,0 +1,76 @@
+# React in Roblox MCP Configuration
+
+## MCP Information
+- Name: React in Roblox
+- Type: Documentation Collection
+- Focus: React-Lua API and patterns for Roblox development
+- Version: 1.0
+- Created: 2026
+
+## Content
+- Total Files: 15 Markdown documents
+- Total Lines: 3,793 (approximately 50,000+ words)
+- Coverage: Complete React API reference + practical guides + real-world examples
+
+## Entry Points
+1. **README.md** - Overview and folder structure
+2. **QUICK_REFERENCE.md** - Quick lookup card
+3. **MCP_OVERVIEW.md** - What this MCP covers
+4. **docs/INDEX.md** - Navigation guide
+5. **docs/guides/getting-started.md** - For beginners
+
+## File Organization
+```
+react-roblox/
+├── README.md                    Main overview
+├── QUICK_REFERENCE.md          Quick lookup
+├── MCP_OVERVIEW.md             MCP scope and content
+├── .mcp-config                 This file
+└── docs/
+    ├── INDEX.md                Navigation
+    ├── api/                    API Reference (4 files)
+    │   ├── core.md
+    │   ├── hooks.md
+    │   ├── context.md
+    │   └── advanced.md
+    ├── guides/                 How-to Guides (3 files)
+    │   ├── getting-started.md
+    │   ├── components.md
+    │   └── project-structure.md
+    └── examples/               Examples (4 files)
+        ├── counter.md
+        ├── form.md
+        ├── project-slither.md
+        └── project-ui-labs.md
+```
+
+## Key Features
+✅ Complete React-Lua API documentation
+✅ Practical, tested code examples
+✅ Real-world project references (Slither, UI-Labs)
+✅ Best practices aligned with Facebook's React recommendations
+✅ Beginner to advanced content
+✅ 100+ inline code examples
+✅ Clear navigation and cross-references
+
+## Scope
+IN: React-Lua usage patterns and APIs
+OUT: Other dependencies, non-React Roblox APIs, testing, backends
+
+## Standards
+- Based on: React 17.0.1
+- Guidelines: Facebook React recommendations
+- Language: Luau/TypeScript
+- Platform: Roblox
+
+## Usage
+This MCP is designed to be:
+- Referenced while coding
+- Searched by topic
+- Used with AI assistants
+- Adapted for learning
+
+## See Also
+- React-Lua: https://react.luau.page/
+- React: https://reactjs.org/docs
+- Roblox: https://create.roblox.com/docs
