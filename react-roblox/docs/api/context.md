@@ -1,381 +1,437 @@
 # Context API
 
-Managing global state and shared data through React Context.
+Managing global state and shared data through React Context in TypeScript.
 
-## React.createContext
+## Creating Context
 
-Creates a context object for sharing data across the component tree.
+Use `createContext` to create a context object for sharing data across the component tree:
 
-```lua
-local MyContext = React.createContext(defaultValue)
-```
+```typescript
+import React, { createContext } from "@rbxts/react"
 
-### Parameters
-- `defaultValue` (any): Default value if no provider is found
+interface Theme {
+  darkMode: boolean
+  primaryColor: Color3
+  secondaryColor: Color3
+}
 
-### Returns
-A context object with `Provider` and `Consumer` components
-
-## Context.Provider
-
-Provides a value to all descendant components:
-
-```lua
-React.createElement(MyContext.Provider, {
-    value = { theme = "dark", fontSize = 14 }
-},
-    -- Child components
-)
-```
-
-### Usage Example
-
-```lua
-local ThemeContext = React.createContext({ theme = "light" })
-
-local function App()
-    return React.createElement(ThemeContext.Provider, {
-        value = { theme = "dark", primaryColor = Color3.new(0, 0, 0) }
-    },
-        React.createElement(MainContent, {})
-    )
-end
-
-local function MainContent()
-    return React.createElement(React.Fragment, nil,
-        React.createElement(Header, {}),
-        React.createElement(Body, {}),
-        React.createElement(Footer, {})
-    )
-end
-```
-
-## Context.Consumer
-
-Reads context values using render props pattern:
-
-```lua
-React.createElement(MyContext.Consumer, nil, function(value)
-    return React.createElement("TextLabel", {
-        Text = value.theme
-    })
-end)
-```
-
-### Example
-
-```lua
-local ThemeContext = React.createContext({ theme = "light" })
-
-local function ThemedButton()
-    return React.createElement(ThemeContext.Consumer, nil, function(theme)
-        local bgColor = theme.theme == "dark" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1)
-        
-        return React.createElement("TextButton", {
-            Text = "Styled Button",
-            BackgroundColor3 = bgColor
-        })
-    end)
-end
-```
-
-## useContext Hook (Recommended)
-
-Modern approach using the `useContext` hook:
-
-```lua
-local value = React.useContext(MyContext)
-```
-
-### Example
-
-```lua
-local ThemeContext = React.createContext({
-    darkMode = false,
-    primaryColor = Color3.new(1, 1, 1)
+const ThemeContext = createContext<Theme>({
+  darkMode: false,
+  primaryColor: Color3.fromRGB(0, 0, 255),
+  secondaryColor: Color3.fromRGB(200, 200, 200),
 })
-
-local function ThemedComponent()
-    local theme = React.useContext(ThemeContext)
-    
-    return React.createElement("Frame", {
-        BackgroundColor3 = theme.darkMode and Color3.new(0, 0, 0) or Color3.new(1, 1, 1)
-    })
-end
 ```
 
-## Multi-Context Setup
+## Provider Component
 
-Combine multiple contexts:
+Provide context values to child components:
 
-```lua
-local ThemeContext = React.createContext({ dark = false })
-local UserContext = React.createContext({ name = "Guest" })
-local NotificationContext = React.createContext({ message = "" })
+```typescript
+import React, { useState } from "@rbxts/react"
 
-local function AppProviders(props)
-    return React.createElement(ThemeContext.Provider, {
-        value = { dark = true }
-    },
-        React.createElement(UserContext.Provider, {
-            value = { name = "Alice", id = 123 }
-        },
-            React.createElement(NotificationContext.Provider, {
-                value = { message = "Welcome!" }
-            },
-                props.children
-            )
-        )
-    )
-end
+interface ThemeProviderProps {
+  children?: React.ReactNode
+}
 
--- Usage
-React.createElement(AppProviders, {},
-    React.createElement(HomePage, {})
-)
+const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+  const [darkMode, setDarkMode] = useState(false)
 
--- Access in components
-local function Component()
-    local theme = React.useContext(ThemeContext)
-    local user = React.useContext(UserContext)
-    local notification = React.useContext(NotificationContext)
-    
-    return React.createElement("TextLabel", {
-        Text = string.format("Hello %s, Theme: %s", user.name, theme.dark and "dark" or "light")
-    })
-end
+  const theme: Theme = {
+    darkMode,
+    primaryColor: darkMode ? Color3.fromRGB(50, 50, 50) : Color3.fromRGB(0, 0, 255),
+    secondaryColor: Color3.fromRGB(200, 200, 200),
+  }
+
+  return (
+    <ThemeContext.Provider value={theme}>
+      {children}
+    </ThemeContext.Provider>
+  )
+}
+
+export default ThemeProvider
 ```
 
-## Provider Components with State
+## Using Context with useContext Hook
 
-Wrap context with stateful logic:
+The modern recommended way to consume context:
 
-```lua
-local ThemeContext = React.createContext({
-    darkMode = false,
-    toggleTheme = function() end
-})
+```typescript
+import { useContext } from "@rbxts/react"
 
-local function ThemeProvider(props)
-    local darkMode, setDarkMode = React.useState(false)
-    
-    return React.createElement(ThemeContext.Provider, {
-        value = {
-            darkMode = darkMode,
-            toggleTheme = function()
-                setDarkMode(not darkMode)
-            end,
-            colors = {
-                background = darkMode and Color3.new(0.1, 0.1, 0.1) or Color3.new(1, 1, 1),
-                text = darkMode and Color3.new(1, 1, 1) or Color3.new(0, 0, 0)
-            }
-        }
-    }, props.children)
-end
+const ThemedButton: React.FC = () => {
+  const theme = useContext(ThemeContext)
 
--- Usage
-React.createElement(ThemeProvider, {},
-    React.createElement(App, {})
-)
+  return (
+    <textbutton
+      Text="Click me"
+      BackgroundColor3={theme.primaryColor}
+      TextColor3={theme.darkMode ? new Color3(1, 1, 1) : new Color3(0, 0, 0)}
+    />
+  )
+}
 ```
 
-## Pattern: Custom Context Hook
+## Custom Context Hook
 
-Create a custom hook for cleaner context consumption:
+Create a custom hook for cleaner context consumption and error handling:
 
-```lua
-local UserContext = React.createContext(nil)
+```typescript
+// src/context/theme-context.ts
+import React, { createContext, useContext } from "@rbxts/react"
 
-local function UserProvider(props)
-    local user, setUser = React.useState(nil)
-    
-    React.useEffect(function()
-        -- Fetch user data
-        setUser({ id = 1, name = "Alice", email = "alice@example.com" })
-    end, {})
-    
-    return React.createElement(UserContext.Provider, {
-        value = { user = user, setUser = setUser }
-    }, props.children)
-end
+interface Theme {
+  darkMode: boolean
+  primaryColor: Color3
+  toggleTheme: () => void
+}
 
--- Custom hook
-local function useUser()
-    local context = React.useContext(UserContext)
-    
-    if not context then
-        error("useUser must be used inside UserProvider")
-    end
-    
-    return context
-end
+const ThemeContext = createContext<Theme | undefined>(undefined)
 
--- Usage in component
-local function UserProfile()
-    local context = useUser()
-    
-    return React.createElement("TextLabel", {
-        Text = context.user and context.user.name or "Loading..."
-    })
-end
+export function useTheme(): Theme {
+  const context = useContext(ThemeContext)
+  if (!context) {
+    throw new Error("useTheme must be used within ThemeProvider")
+  }
+  return context
+}
+
+export function ThemeProvider({ children }: { children?: React.ReactNode }) {
+  const [darkMode, setDarkMode] = useState(false)
+
+  const theme: Theme = {
+    darkMode,
+    primaryColor: darkMode ? Color3.fromRGB(50, 50, 50) : Color3.fromRGB(0, 0, 255),
+    toggleTheme: () => setDarkMode(!darkMode),
+  }
+
+  return (
+    <ThemeContext.Provider value={theme}>
+      {children}
+    </ThemeContext.Provider>
+  )
+}
+```
+
+**Usage:**
+```typescript
+const ThemedComponent: React.FC = () => {
+  const { primaryColor, toggleTheme } = useTheme()
+
+  return (
+    <textbutton
+      Text="Toggle Theme"
+      BackgroundColor3={primaryColor}
+      Event={{ Activated: toggleTheme }}
+    />
+  )
+}
+```
+
+## Multiple Contexts
+
+Combine multiple contexts for different concerns:
+
+```typescript
+// src/context/index.ts
+import React, { useState } from "@rbxts/react"
+
+// Theme context
+interface Theme {
+  darkMode: boolean
+}
+
+const ThemeContext = createContext<Theme>({ darkMode: false })
+
+// User context
+interface User {
+  id: number
+  name: string
+}
+
+const UserContext = createContext<User | undefined>(undefined)
+
+// Notification context
+interface Notification {
+  message: string
+}
+
+const NotificationContext = createContext<Notification>({ message: "" })
+
+export const RootProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  const [darkMode, setDarkMode] = useState(false)
+  const [user, setUser] = useState<User | undefined>({ id: 1, name: "Alice" })
+  const [notification, setNotification] = useState({ message: "Welcome!" })
+
+  return (
+    <ThemeContext.Provider value={{ darkMode }}>
+      <UserContext.Provider value={user}>
+        <NotificationContext.Provider value={notification}>
+          {children}
+        </NotificationContext.Provider>
+      </UserContext.Provider>
+    </ThemeContext.Provider>
+  )
+}
+```
+
+## Context with State Management
+
+Combine context with `useState` for dynamic state:
+
+```typescript
+// src/context/auth-context.tsx
+import React, { useState, useContext } from "@rbxts/react"
+
+interface AuthContextType {
+  isLoggedIn: boolean
+  login: (username: string) => void
+  logout: () => void
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider")
+  }
+  return context
+}
+
+export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  const login = (username: string) => {
+    print(`Logging in ${username}`)
+    setIsLoggedIn(true)
+  }
+
+  const logout = () => {
+    print("Logging out")
+    setIsLoggedIn(false)
+  }
+
+  return (
+    <AuthContext.Provider value={{ isLoggedIn, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+```
+
+## Context with useReducer
+
+Manage complex state with a reducer:
+
+```typescript
+// src/context/counter-context.ts
+import React, { useReducer, useContext, useCallback } from "@rbxts/react"
+
+interface CounterState {
+  count: number
+}
+
+type CounterAction =
+  | { type: "INCREMENT" }
+  | { type: "DECREMENT" }
+  | { type: "RESET" }
+  | { type: "SET"; value: number }
+
+interface CounterContextType {
+  state: CounterState
+  dispatch: React.Dispatch<CounterAction>
+}
+
+const CounterContext = createContext<CounterContextType | undefined>(undefined)
+
+function counterReducer(state: CounterState, action: CounterAction): CounterState {
+  switch (action.type) {
+    case "INCREMENT":
+      return { count: state.count + 1 }
+    case "DECREMENT":
+      return { count: state.count - 1 }
+    case "RESET":
+      return { count: 0 }
+    case "SET":
+      return { count: action.value }
+  }
+}
+
+export function useCounter() {
+  const context = useContext(CounterContext)
+  if (!context) {
+    throw new Error("useCounter must be used within CounterProvider")
+  }
+  return context
+}
+
+export const CounterProvider: React.FC<{ children?: React.ReactNode }> = ({
+  children,
+}) => {
+  const [state, dispatch] = useReducer(counterReducer, { count: 0 })
+
+  return (
+    <CounterContext.Provider value={{ state, dispatch }}>
+      {children}
+    </CounterContext.Provider>
+  )
+}
+```
+
+**Usage:**
+```typescript
+const Counter: React.FC = () => {
+  const { state, dispatch } = useCounter()
+
+  return (
+    <frame>
+      <textlabel Text={`Count: ${state.count}`} />
+      <textbutton
+        Text="Increment"
+        Event={{ Activated: () => dispatch({ type: "INCREMENT" }) }}
+      />
+      <textbutton
+        Text="Decrement"
+        Event={{ Activated: () => dispatch({ type: "DECREMENT" }) }}
+      />
+    </frame>
+  )
+}
 ```
 
 ## Real-World Example: Theme System
 
-```lua
-local ThemeContext = React.createContext({
-    primaryColor = Color3.fromRGB(59, 89, 152),
-    secondaryColor = Color3.fromRGB(243, 114, 69),
-    fontSize = 12
-})
+A complete theme system with switching:
 
-local THEMES = {
-    light = {
-        primaryColor = Color3.fromRGB(59, 89, 152),
-        secondaryColor = Color3.fromRGB(243, 114, 69),
-        backgroundColor = Color3.new(1, 1, 1),
-        textColor = Color3.new(0, 0, 0),
-        fontSize = 12
-    },
-    dark = {
-        primaryColor = Color3.fromRGB(100, 150, 200),
-        secondaryColor = Color3.fromRGB(255, 150, 100),
-        backgroundColor = Color3.fromRGB(30, 30, 30),
-        textColor = Color3.new(1, 1, 1),
-        fontSize = 12
-    }
+```typescript
+// src/context/theme-context.ts
+import React, { useState, useContext, useMemo } from "@rbxts/react"
+
+type ThemeName = "light" | "dark"
+
+interface Theme {
+  name: ThemeName
+  backgroundColor: Color3
+  textColor: Color3
+  primaryColor: Color3
+  secondaryColor: Color3
 }
 
-local function ThemeProvider(props)
-    local themeName, setThemeName = React.useState("light")
-    local currentTheme = THEMES[themeName]
-    
-    return React.createElement(ThemeContext.Provider, {
-        value = table.assign({}, currentTheme, {
-            themeName = themeName,
-            setThemeName = setThemeName
-        })
-    }, props.children)
-end
+interface ThemeContextType {
+  theme: Theme
+  themeName: ThemeName
+  setThemeName: (name: ThemeName) => void
+}
 
--- Usage
-local function App()
-    return React.createElement(ThemeProvider, {},
-        React.createElement(MainContent, {})
-    )
-end
+const THEMES: Record<ThemeName, Theme> = {
+  light: {
+    name: "light",
+    backgroundColor: new Color3(1, 1, 1),
+    textColor: new Color3(0, 0, 0),
+    primaryColor: Color3.fromRGB(59, 89, 152),
+    secondaryColor: Color3.fromRGB(243, 114, 69),
+  },
+  dark: {
+    name: "dark",
+    backgroundColor: Color3.fromRGB(30, 30, 30),
+    textColor: new Color3(1, 1, 1),
+    primaryColor: Color3.fromRGB(100, 150, 200),
+    secondaryColor: Color3.fromRGB(255, 150, 100),
+  },
+}
 
-local function ThemedButton(props)
-    local theme = React.useContext(ThemeContext)
-    
-    return React.createElement("TextButton", {
-        Text = props.label,
-        BackgroundColor3 = theme.primaryColor,
-        TextColor3 = theme.textColor,
-        TextSize = theme.fontSize,
-        [React.Event.Activated] = function()
-            -- Toggle theme
-            theme.setThemeName(theme.themeName == "light" and "dark" or "light")
-        end
-    })
-end
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
+
+export function useTheme(): ThemeContextType {
+  const context = useContext(ThemeContext)
+  if (!context) {
+    throw new Error("useTheme must be used within ThemeProvider")
+  }
+  return context
+}
+
+export const ThemeProvider: React.FC<{ children?: React.ReactNode }> = ({
+  children,
+}) => {
+  const [themeName, setThemeName] = useState<ThemeName>("light")
+  const theme = THEMES[themeName]
+
+  const value = useMemo(
+    () => ({ theme, themeName, setThemeName }),
+    [theme, themeName]
+  )
+
+  return (
+    <ThemeContext.Provider value={value}>
+      {children}
+    </ThemeContext.Provider>
+  )
+}
 ```
 
-## Pattern: Combining Context with Reducer
+## Performance Optimization
 
-Complex state management:
+Context causes all consuming components to re-render when the value changes. Optimize by:
 
-```lua
-local StateContext = React.createContext(nil)
-local DispatchContext = React.createContext(nil)
+1. **Split contexts by update frequency** - Separate frequently-changing from static data
+2. **Memoize context values** - Use `useMemo` to prevent unnecessary re-renders
+3. **Memoize components** - Use `React.memo` on consumers
 
-local function reducer(state, action)
-    if action.type == "INCREMENT" then
-        return { count = state.count + 1 }
-    elseif action.type == "DECREMENT" then
-        return { count = state.count - 1 }
-    elseif action.type == "RESET" then
-        return { count = 0 }
-    end
-    return state
-end
+```typescript
+const MyProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  const [data, setData] = useState({ /* ... */ })
 
-local function CounterProvider(props)
-    local state, dispatch = React.useReducer(reducer, { count = 0 })
-    
-    return React.createElement(StateContext.Provider, {
-        value = state
-    },
-        React.createElement(DispatchContext.Provider, {
-            value = dispatch
-        }, props.children)
-    )
-end
+  // Memoize the value to prevent unnecessary re-renders
+  const value = useMemo(
+    () => ({
+      data,
+      setData,
+    }),
+    [data]
+  )
 
--- Custom hooks
-local function useCounterState()
-    local context = React.useContext(StateContext)
-    if not context then
-        error("useCounterState must be used inside CounterProvider")
-    end
-    return context
-end
-
-local function useCounterDispatch()
-    local context = React.useContext(DispatchContext)
-    if not context then
-        error("useCounterDispatch must be used inside CounterProvider")
-    end
-    return context
-end
-
--- Usage
-local function Counter()
-    local state = useCounterState()
-    local dispatch = useCounterDispatch()
-    
-    return React.createElement("Frame", {},
-        React.createElement("TextLabel", {
-            Text = "Count: " .. tostring(state.count)
-        }),
-        React.createElement("TextButton", {
-            Text = "Increment",
-            [React.Event.Activated] = function()
-                dispatch({ type = "INCREMENT" })
-            end
-        }),
-        React.createElement("TextButton", {
-            Text = "Decrement",
-            [React.Event.Activated] = function()
-                dispatch({ type = "DECREMENT" })
-            end
-        })
-    )
-end
+  return (
+    <MyContext.Provider value={value}>
+      {children}
+    </MyContext.Provider>
+  )
+}
 ```
 
-## Performance Considerations
+## Common Patterns
 
-- Context causes re-renders of all consuming components when value changes
-- Split contexts by update frequency
-- Use memoization to prevent unnecessary re-renders
+### Separating State and Dispatch Contexts
 
-```lua
-local function OptimizedProvider(props)
-    local data, setData = React.useState({ ... })
-    
-    -- Memoize the value to prevent unnecessary re-renders
-    local value = React.useMemo(function()
-        return {
-            data = data,
-            setData = setData
-        }
-    end, { data })
-    
-    return React.createElement(MyContext.Provider, {
-        value = value
-    }, props.children)
-end
+For better performance, separate state and dispatch contexts:
+
+```typescript
+const StateContext = createContext<State | undefined>(undefined)
+const DispatchContext = createContext<Dispatch | undefined>(undefined)
+
+export const MyProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  const [state, dispatch] = useReducer(reducer, initialState)
+
+  return (
+    <StateContext.Provider value={state}>
+      <DispatchContext.Provider value={dispatch}>
+        {children}
+      </DispatchContext.Provider>
+    </StateContext.Provider>
+  )
+}
+
+export function useState() {
+  const context = useContext(StateContext)
+  if (!context) throw new Error("useState must be used within MyProvider")
+  return context
+}
+
+export function useDispatch() {
+  const context = useContext(DispatchContext)
+  if (!context) throw new Error("useDispatch must be used within MyProvider")
+  return context
+}
 ```
 
 ---

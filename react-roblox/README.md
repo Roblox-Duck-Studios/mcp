@@ -1,115 +1,147 @@
 # React in Roblox - MCP Documentation
 
-This MCP (Model Context Protocol) documentation provides comprehensive information about using React (React-Lua) for building UIs in Roblox with TypeScript/Luau.
+This MCP (Model Context Protocol) documentation provides comprehensive information about using React with **roblox-typescript** for building UIs in Roblox.
 
 ## Overview
 
-React-Lua is an implementation of React for the Luau language, enabling declarative UI development on the Roblox platform. This documentation covers:
+React-Lua is an implementation of React for Roblox, enabling declarative, component-based UI development. This documentation covers React patterns with **TypeScript best practices**:
 
-- Core React API concepts
-- Hooks for state management
-- Component patterns and lifecycle
-- Real-world project examples
-- Best practices aligned with official React recommendations
+- Core React API concepts with TypeScript
+- Hooks for state and side effect management
+- Component composition and patterns
+- Real-world Roblox project examples
+- Modern community conventions and standards
+- Responsive design with ui-scaler
 
 ## Structure
 
 ```
 react-roblox/
 ├── docs/
-│   ├── api/                    # React API reference
-│   │   ├── core.md            # Core API (createElement, etc.)
-│   │   ├── hooks.md           # Hooks API
-│   │   ├── context.md         # Context API
-│   │   └── advanced.md        # Advanced features
+│   ├── api/                      # React API reference
+│   │   ├── core.md               # Core API (createElement, etc.)
+│   │   ├── hooks.md              # Hooks API (useState, useEffect, etc.)
+│   │   ├── context.md            # Context API for global state
+│   │   └── advanced.md           # Advanced features (refs, etc.)
 │   ├── guides/
-│   │   ├── getting-started.md # Beginner guide
-│   │   ├── components.md      # Component patterns
-│   │   ├── state-management.md # State and effects
-│   │   └── project-structure.md # Folder organization
+│   │   ├── getting-started.md    # Your first React component
+│   │   ├── components.md         # Component patterns & best practices
+│   │   ├── project-structure.md  # Project organization & conventions
+│   │   ├── file-naming.md        # File naming conventions
+│   │   ├── component-organization.md # Organizing components
+│   │   └── ui-scaler.md          # Responsive design with usePx
 │   └── examples/
-│       ├── counter.md         # Simple counter
-│       ├── form.md            # Form handling
-│       └── reflex-integration.md # State management
-├── projects/
-│   ├── slither/               # Real-world example
-│   └── ui-labs/               # Component library example
-└── src/
-    └── code-examples/         # Runnable examples
+│       ├── counter.md            # Simple counter component
+│       ├── form.md               # Form with validation
+│       ├── project-slither.md    # Production game UI reference
+│       └── project-ui-labs.md    # Component library reference
+└── INDEX.md                       # Quick navigation guide
 ```
 
 ## Key Concepts
 
-### Functional Components
-```lua
-local function MyComponent(props)
-    return React.createElement("TextLabel", {
-        Text = props.text
-    })
-end
+### Functional Components (TypeScript)
+
+```typescript
+import React from "@rbxts/react"
+
+interface HelloWorldProps {
+  name: string
+}
+
+const HelloWorld: React.FC<HelloWorldProps> = ({ name }) => {
+  return <textlabel Text={`Hello, ${name}`} Size={new UDim2(0, 200, 0, 50)} />
+}
+
+export default HelloWorld
 ```
 
 ### Hooks
 - `useState` - State management
-- `useEffect` - Side effects
+- `useEffect` - Side effects and lifecycle
 - `useContext` - Context consumption
-- `useCallback` - Function memoization
-- `useMemo` - Value memoization
+- `useCallback` - Memoize functions
+- `useMemo` - Memoize values
 - `useRef` - Direct instance access
 
-### Project Structure (Facebook/Official Recommendations)
+### Project Structure (Community Best Practices)
 
-Follow the official React folder structure patterns adapted for Roblox:
+Follow modern folder structure patterns adapted for Roblox:
 
 ```
 src/
-├── components/           # Reusable UI components
-│   ├── Button.tsx
-│   ├── Input.tsx
-│   └── Card.tsx
-├── hooks/               # Custom hooks
-│   ├── useForm.ts
-│   └── useTheme.ts
-├── context/             # Context providers
-│   ├── ThemeContext.ts
-│   └── UserContext.ts
-├── pages/               # Page-level components
-│   └── HomePage.tsx
-├── utils/               # Utility functions
-│   └── formatting.ts
-└── types/               # Type definitions
-    └── models.ts
+├── components/                   # Reusable UI components
+│   ├── common/
+│   │   ├── my-button/
+│   │   │   ├── my-button.tsx
+│   │   │   └── index.ts
+│   │   └── my-card/
+│   │       ├── my-card.tsx
+│   │       └── index.ts
+│   ├── layouts/
+│   │   ├── app-layout/
+│   │   │   ├── app-layout.tsx
+│   │   │   └── index.ts
+│   └── pages/
+│       ├── home-page/
+│       │   ├── home-page.tsx
+│       │   └── index.ts
+├── hooks/                        # Custom hooks
+│   ├── use-form.ts
+│   ├── use-theme.ts
+│   └── index.ts
+├── context/                      # Context providers
+│   ├── theme-context.ts
+│   ├── user-context.ts
+│   └── index.ts
+├── utils/                        # Utility functions
+│   ├── formatting.ts
+│   └── validation.ts
+├── types/                        # Type definitions
+│   ├── component-props.ts
+│   └── models.ts
+└── app.tsx                       # Root component
 ```
 
-## References
+**Key Conventions:**
+- 📝 **Component names**: PascalCase (`MyButton`, `AlertDialog`)
+- 📁 **Files & folders**: kebab-case (`my-button`, `use-form`)
+- 📏 **UI sizing**: Use `usePx` from `@rbxts/ui-scaler`
 
-- **Official React Lua Documentation**: https://react.luau.page/api-reference/react/
-- **React JS Concepts**: https://reactjs.org/docs (concepts apply to React-Lua)
-- **Roblox Engine API**: https://create.roblox.com/docs
+## Modern Community References
 
-## Real-World Examples
+This documentation incorporates patterns from:
 
-### Slither (littensy/slither)
-A game built with React patterns demonstrating:
-- Complex state management
-- Component composition
-- Event handling and Roblox-specific integrations
-
-### UI-Labs (PepeElToro41/ui-labs)
-A component library and design system showing:
-- Reusable component patterns
-- Theme management with Context
-- Plugin development
-- Custom hooks for UI utilities
+- **@rbxts/topbar-components** - Component export patterns
+- **@rbxts/ripple** - UI component library structure
+- **@rbxts/ultimate-list** - List rendering and virtualization
+- **@rbxts/ui-scaler** - Responsive design with `usePx`
+- **littensy/pretty-react-hooks** - Custom hook patterns
+- **littensy/slither** - Production game UI
+- **PepeElToro41/ui-labs** - Design systems and theming
 
 ## Getting Started
 
-1. Start with [Getting Started Guide](./docs/guides/getting-started.md)
-2. Learn [Core API Concepts](./docs/api/core.md)
-3. Understand [Hooks](./docs/api/hooks.md)
-4. Review [Component Patterns](./docs/guides/components.md)
-5. Study [Project Structure](./docs/guides/project-structure.md)
+**Beginner Path:**
+1. [Getting Started Guide](./docs/guides/getting-started.md) - Your first component
+2. [Core API](./docs/api/core.md) - API fundamentals
+3. [Component Patterns](./docs/guides/components.md) - Building with components
+4. [Project Structure](./docs/guides/project-structure.md) - Organizing your code
+
+**Intermediate Path:**
+1. [Hooks Deep Dive](./docs/api/hooks.md) - Master hooks
+2. [Context API](./docs/api/context.md) - Global state management
+3. [UI Scaler Guide](./docs/guides/ui-scaler.md) - Responsive design
+4. [Examples](./docs/examples/) - Real-world patterns
+
+**Advanced Path:**
+1. [Advanced Features](./docs/api/advanced.md) - Refs, lazy, etc.
+2. [Project References](./docs/examples/) - Study production code
+3. [Component Organization](./docs/guides/component-organization.md) - Scale your project
 
 ---
 
-**Note**: This MCP focuses exclusively on React usage patterns. For Roblox-specific APIs not related to React, consult the official Roblox documentation.
+**Focus**: React patterns with roblox-typescript  
+**Language**: TypeScript only (no Luau)  
+**Based on**: React 17.0+, community best practices  
+**Scope**: React usage and patterns

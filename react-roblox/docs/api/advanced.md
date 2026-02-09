@@ -1,321 +1,493 @@
 # Advanced React Features
 
-Advanced patterns and APIs for experienced React developers.
-
-## React.lazy and Code Splitting
-
-Lazily load components to improve performance:
-
-```lua
-local HeavyComponent = React.lazy(function()
-    return require(script.Parent.HeavyComponent)
-end)
-
--- Use within Suspense boundary
-React.createElement(React.Suspense, {
-    fallback = React.createElement("TextLabel", { Text = "Loading..." })
-},
-    React.createElement(HeavyComponent, {})
-)
-```
-
-**Note**: React.lazy may have limited utility in Roblox since modules are already loaded quickly. Use if you have measurable performance issues.
-
-## React.createMutableSource and useMutableSource
-
-For integrating external mutable data sources (advanced):
-
-```lua
-local mutableSource = React.createMutableSource(
-    dataStore,
-    function(a, b) return a.version == b.version end
-)
-
-local function Component()
-    local snapshot = React.useMutableSource(
-        mutableSource,
-        function(source) return source:getSnapshot() end,
-        function(source, callback) return source:subscribe(callback) end
-    )
-    
-    return React.createElement("TextLabel", {
-        Text = snapshot.data
-    })
-end
-```
-
-## Ref Forwarding with useImperativeHandle
-
-Create custom ref interfaces:
-
-```lua
-local TextInputWithButton = React.forwardRef(function(props, ref)
-    local inputRef = React.useRef(nil)
-    
-    React.useImperativeHandle(ref, function()
-        return {
-            focus = function()
-                inputRef.current:CaptureFocus()
-            end,
-            clear = function()
-                inputRef.current.Text = ""
-            end,
-            getValue = function()
-                return inputRef.current.Text
-            end
-        }
-    end, {})
-    
-    return React.createElement("TextBox", {
-        ref = inputRef,
-        Size = UDim2.fromOffset(200, 30)
-    })
-end)
-
--- Usage
-local function Form()
-    local inputRef = React.useRef(nil)
-    
-    return React.createElement("Frame", {},
-        React.createElement(TextInputWithButton, {
-            ref = inputRef
-        }),
-        React.createElement("TextButton", {
-            Text = "Get Value",
-            [React.Event.Activated] = function()
-                print(inputRef.current.getValue())
-            end
-        })
-    )
-end
-```
-
-## Binding and useBinding
-
-Roblox-specific: Create reactive bindings for property changes:
-
-```lua
-local function useBinding(initialValue)
-    local binding, setBinding = React.createBinding(initialValue)
-    
-    return {
-        binding = binding,
-        setBinding = setBinding
-    }
-end
-
-local function AnimatedFrame()
-    local size = React.createBinding(UDim2.fromOffset(100, 100))
-    
-    React.useEffect(function()
-        local TweenService = game:GetService("TweenService")
-        
-        -- Animate size
-        local tween = TweenService:Create(
-            size,
-            TweenInfo.new(1),
-            { X = UDim2.fromOffset(200, 200) }
-        )
-        tween:Play()
-        
-        return function()
-            tween:Cancel()
-        end
-    end, {})
-    
-    return React.createElement("Frame", {
-        Size = size
-    })
-end
-```
-
-## Error Boundaries
-
-Handle errors gracefully in component trees (limited support):
-
-```lua
-local ErrorBoundary = React.Component:extend("ErrorBoundary")
-
-function ErrorBoundary:init()
-    self:setState({ hasError = false, error = nil })
-end
-
-function ErrorBoundary:render()
-    if self.state.hasError then
-        return React.createElement("TextLabel", {
-            Text = "Error: " .. tostring(self.state.error),
-            TextColor3 = Color3.new(1, 0, 0)
-        })
-    end
-    
-    return self.props.children
-end
-
--- Note: Error boundaries have limited support in React-Lua
--- Use try-catch as fallback
-```
+Advanced patterns and APIs for experienced React developers in TypeScript.
 
 ## Compound Components Pattern
 
-Components that manage state together:
+Create components that manage state together with a flexible composition API:
 
-```lua
--- Tabs.tsx
-local Tabs = React.Component:extend("Tabs")
+```typescript
+// src/components/tabs/tabs-context.ts
+import React, { createContext, useContext, useState } from "@rbxts/react"
 
-function Tabs:init()
-    self:setState({ activeTab = 1 })
-end
+interface TabsContextType {
+  activeTab: string
+  setActiveTab: (id: string) => void
+}
 
-function Tabs:render()
-    return React.createElement("Frame", {
-        Size = UDim2.fromScale(1, 1)
-    },
-        -- Render tabs header
-        React.createElement("Frame", {
-            Size = UDim2.fromScale(1, 0.1)
-        },
-            React.Children.map(self.props.children, function(child, index)
-                return React.cloneElement(child, {
-                    isActive = self.state.activeTab == index,
-                    onClick = function()
-                        self:setState({ activeTab = index })
-                    end
-                })
-            end)
-        ),
-        -- Render active tab content
-        React.Children.toArray(self.props.children)[self.state.activeTab]
-    )
-end
+const TabsContext = createContext<TabsContextType | undefined>(undefined)
 
--- TabItem.tsx
-local function TabItem(props)
-    return React.createElement("TextButton", {
-        Text = props.label,
-        BackgroundColor3 = if props.isActive then Color3.new(0, 0, 1) else Color3.new(1, 1, 1),
-        [React.Event.Activated] = props.onClick
-    })
-end
+function useTabsContext() {
+  const context = useContext(TabsContext)
+  if (!context) {
+    throw new Error("useTabsContext must be used within Tabs component")
+  }
+  return context
+}
 
--- Usage
-React.createElement(Tabs, {},
-    React.createElement(TabItem, { label = "Tab 1" }),
-    React.createElement(TabItem, { label = "Tab 2" }),
-    React.createElement(TabItem, { label = "Tab 3" })
+// src/components/tabs/tabs.tsx
+interface TabsProps {
+  defaultTab?: string
+  children?: React.ReactNode
+}
+
+const Tabs: React.FC<TabsProps> = ({ defaultTab = "", children }) => {
+  const [activeTab, setActiveTab] = useState(defaultTab)
+
+  return (
+    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+      <frame Size={new UDim2(1, 0, 1, 0)}>
+        {children}
+      </frame>
+    </TabsContext.Provider>
+  )
+}
+
+// src/components/tabs/tab-list.tsx
+interface TabListProps {
+  children?: React.ReactNode
+}
+
+const TabList: React.FC<TabListProps> = ({ children }) => {
+  return (
+    <frame Size={new UDim2(1, 0, 0, 40)}>
+      <uilistlayout Orientation={Enum.UIListLayout.FillDirection.Horizontal} />
+      {children}
+    </frame>
+  )
+}
+
+// src/components/tabs/tab-button.tsx
+interface TabButtonProps {
+  id: string
+  label: string
+}
+
+const TabButton: React.FC<TabButtonProps> = ({ id, label }) => {
+  const { activeTab, setActiveTab } = useTabsContext()
+  const isActive = activeTab === id
+
+  return (
+    <textbutton
+      Text={label}
+      BackgroundColor3={isActive ? Color3.fromRGB(0, 0, 255) : Color3.fromRGB(200, 200, 200)}
+      Event={{ Activated: () => setActiveTab(id) }}
+    />
+  )
+}
+
+// src/components/tabs/tab-panel.tsx
+interface TabPanelProps {
+  id: string
+  children?: React.ReactNode
+}
+
+const TabPanel: React.FC<TabPanelProps> = ({ id, children }) => {
+  const { activeTab } = useTabsContext()
+
+  return activeTab === id ? <frame>{children}</frame> : null
+}
+
+// Usage
+const App: React.FC = () => (
+  <Tabs defaultTab="tab1">
+    <TabList>
+      <TabButton id="tab1" label="Tab 1" />
+      <TabButton id="tab2" label="Tab 2" />
+      <TabButton id="tab3" label="Tab 3" />
+    </TabList>
+    <TabPanel id="tab1">
+      <textlabel Text="Content of Tab 1" />
+    </TabPanel>
+    <TabPanel id="tab2">
+      <textlabel Text="Content of Tab 2" />
+    </TabPanel>
+    <TabPanel id="tab3">
+      <textlabel Text="Content of Tab 3" />
+    </TabPanel>
+  </Tabs>
 )
-```
-
-## Integrating with External State
-
-Connect React to external Roblox systems:
-
-```lua
-local RunService = game:GetService("RunService")
-
-local function useHeartbeat()
-    local deltaTime, setDeltaTime = React.useState(0)
-    
-    React.useEffect(function()
-        local connection = RunService.Heartbeat:Connect(function(dt)
-            setDeltaTime(dt)
-        end)
-        
-        return function()
-            connection:Disconnect()
-        end
-    end, {})
-    
-    return deltaTime
-end
-
--- Usage
-local function GameLoopComponent()
-    local dt = useHeartbeat()
-    local elapsed, setElapsed = React.useState(0)
-    
-    React.useEffect(function()
-        setElapsed(elapsed + dt)
-    end, { dt })
-    
-    return React.createElement("TextLabel", {
-        Text = string.format("Elapsed: %.2f", elapsed)
-    })
-end
 ```
 
 ## Dynamic Component Selection
 
-Render different components based on type:
+Render different components based on a type or key:
 
-```lua
-local componentMap = {
-    button = require(script.Button),
-    input = require(script.Input),
-    card = require(script.Card)
+```typescript
+import React from "@rbxts/react"
+
+interface ButtonComponentProps {
+  label: string
+  onClick?: () => void
 }
 
-local function DynamicComponent(props)
-    local Component = componentMap[props.type]
-    
-    if not Component then
-        return React.createElement("TextLabel", {
-            Text = "Unknown component type: " .. props.type
-        })
-    end
-    
-    return React.createElement(Component, props)
-end
+interface InputComponentProps {
+  placeholder?: string
+}
 
--- Usage
-React.createElement(DynamicComponent, {
-    type = "button",
-    label = "Click me"
-})
+interface CardComponentProps {
+  title: string
+  children?: React.ReactNode
+}
+
+const componentMap: Record<string, React.ComponentType<any>> = {
+  button: ({ label, onClick }: ButtonComponentProps) => (
+    <textbutton Text={label} Event={{ Activated: onClick }} />
+  ),
+  input: ({ placeholder }: InputComponentProps) => (
+    <textbox PlaceholderText={placeholder} />
+  ),
+  card: ({ title, children }: CardComponentProps) => (
+    <frame>
+      <textlabel Text={title} />
+      {children}
+    </frame>
+  ),
+}
+
+interface DynamicComponentProps {
+  type: string
+  [key: string]: any
+}
+
+const DynamicComponent: React.FC<DynamicComponentProps> = ({ type, ...props }) => {
+  const Component = componentMap[type]
+
+  if (!Component) {
+    return <textlabel Text={`Unknown component type: ${type}`} TextColor3={Color3.fromRGB(255, 0, 0)} />
+  }
+
+  return <Component {...props} />
+}
+
+// Usage
+const App: React.FC = () => (
+  <frame>
+    <DynamicComponent type="button" label="Click me" onClick={() => print("clicked")} />
+    <DynamicComponent type="input" placeholder="Enter text" />
+    <DynamicComponent type="card" title="My Card">
+      <textlabel Text="Card content" />
+    </DynamicComponent>
+  </frame>
+)
 ```
 
-## Performance Profiling
+## Integrating with Roblox Services
 
-Identify performance bottlenecks:
+Connect React to Roblox game loop and services:
 
-```lua
-local function useRenderCount()
-    local count, setCount = React.useState(0)
-    
-    React.useEffect(function()
-        setCount(count + 1)
-        print("Rendered", count, "times")
-    end)
-    
-    return count
-end
+```typescript
+import { useEffect, useState } from "@rbxts/react"
+import { RunService, UserInputService } from "@rbxts/services"
 
-local function ProfiledComponent()
-    local renderCount = useRenderCount()
-    
-    return React.createElement("TextLabel", {
-        Text = "Render count: " .. tostring(renderCount)
+// Custom hook for Heartbeat
+export function useHeartbeat() {
+  const [deltaTime, setDeltaTime] = useState(0)
+
+  useEffect(() => {
+    const connection = RunService.Heartbeat.Connect((dt) => {
+      setDeltaTime(dt)
     })
-end
+
+    return () => {
+      connection.Disconnect()
+    }
+  }, [])
+
+  return deltaTime
+}
+
+// Custom hook for keyboard input
+export function useKeyPress(keyCode: Enum.KeyCode) {
+  const [isPressed, setIsPressed] = useState(false)
+
+  useEffect(() => {
+    const inputBegan = UserInputService.InputBegan.Connect((input) => {
+      if (input.KeyCode === keyCode) {
+        setIsPressed(true)
+      }
+    })
+
+    const inputEnded = UserInputService.InputEnded.Connect((input) => {
+      if (input.KeyCode === keyCode) {
+        setIsPressed(false)
+      }
+    })
+
+    return () => {
+      inputBegan.Disconnect()
+      inputEnded.Disconnect()
+    }
+  }, [keyCode])
+
+  return isPressed
+}
+
+// Usage
+const GameStatus: React.FC = () => {
+  const dt = useHeartbeat()
+  const wPressed = useKeyPress(Enum.KeyCode.W)
+
+  return (
+    <textlabel
+      Text={`FPS: ${(1 / dt).toFixed(1)}, W Key: ${wPressed ? "Pressed" : "Released"}`}
+    />
+  )
+}
 ```
 
-## Debugging Tips
+## Custom Hooks for Complex Logic
 
-1. **React DevTools** - Inspect component tree (if available)
-2. **Console logging** - Add print statements strategically
-3. **Performance monitoring** - Track render counts
-4. **Error tracking** - Wrap components in error handlers
-5. **Props validation** - Check prop types in development
+Extract and reuse complex stateful logic:
 
-## Best Practices for Advanced Usage
+```typescript
+// src/hooks/use-async.ts
+import { useEffect, useState } from "@rbxts/react"
 
-1. **Keep it simple** - Don't over-engineer solutions
-2. **Profile first** - Measure performance before optimizing
-3. **Use standard patterns** - Stick to documented React patterns
-4. **Test thoroughly** - Advanced features need careful testing
-5. **Document complex logic** - Help future maintainers understand
-6. **Avoid premature optimization** - Fix real problems, not theoretical ones
+interface UseAsyncState<T> {
+  data?: T
+  error?: unknown
+  loading: boolean
+}
+
+export function useAsync<T>(
+  asyncFunction: () => Promise<T>,
+  immediate = true
+): UseAsyncState<T> {
+  const [state, setState] = useState<UseAsyncState<T>>({
+    loading: immediate,
+  })
+
+  useEffect(() => {
+    let cancelled = false
+
+    const execute = async () => {
+      setState({ loading: true })
+      try {
+        const response = await asyncFunction()
+        if (!cancelled) {
+          setState({ data: response, loading: false })
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setState({ error, loading: false })
+        }
+      }
+    }
+
+    if (immediate) {
+      execute()
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [asyncFunction])
+
+  return state
+}
+
+// src/hooks/use-local-storage.ts
+import { useState, useEffect } from "@rbxts/react"
+
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T
+): [T, (value: T) => void] {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    try {
+      // In a real app, use your storage solution
+      return initialValue
+    } catch (error) {
+      print("Error reading localStorage:", error)
+      return initialValue
+    }
+  })
+
+  const setValue = (value: T) => {
+    try {
+      setStoredValue(value)
+      // Store to your persistent storage
+    } catch (error) {
+      print("Error setting localStorage:", error)
+    }
+  }
+
+  return [storedValue, setValue]
+}
+
+// Usage
+const PersistentForm: React.FC = () => {
+  const [name, setName] = useLocalStorage("formName", "")
+
+  return (
+    <textbox
+      Text={name}
+      Event={{
+        FocusLost: (rbx: TextBox) => setName(rbx.Text),
+      }}
+    />
+  )
+}
+```
+
+## Performance Optimization Patterns
+
+### Memoization with useMemo
+
+```typescript
+import { useMemo } from "@rbxts/react"
+
+interface DataListProps {
+  items: Array<{ id: number; name: string; price: number }>
+  searchText: string
+  filterType?: string
+}
+
+const DataList: React.FC<DataListProps> = ({ items, searchText, filterType }) => {
+  // Only recompute when items or search text changes
+  const filtered = useMemo(() => {
+    let result = items
+
+    if (searchText) {
+      result = result.filter((item) =>
+        item.name.lower().find(searchText.lower())[0] !== undefined
+      )
+    }
+
+    if (filterType) {
+      result = result.filter((item) => item.price > 0) // Example filter
+    }
+
+    return result
+  }, [items, searchText, filterType])
+
+  return (
+    <scrollingframe>
+      <uilistlayout />
+      {filtered.map((item) => (
+        <textlabel key={item.id} Text={`${item.name} - $${item.price}`} />
+      ))}
+    </scrollingframe>
+  )
+}
+```
+
+### useCallback for Stable Function References
+
+```typescript
+import { useCallback } from "@rbxts/react"
+
+interface ButtonListProps {
+  items: string[]
+  onSelect: (item: string) => void
+}
+
+const ButtonList: React.FC<ButtonListProps> = ({ items, onSelect }) => {
+  // Stable reference - prevents child re-renders
+  const handleClick = useCallback((item: string) => {
+    onSelect(item)
+  }, [onSelect])
+
+  return (
+    <frame>
+      {items.map((item) => (
+        <textbutton
+          key={item}
+          Text={item}
+          Event={{ Activated: () => handleClick(item) }}
+        />
+      ))}
+    </frame>
+  )
+}
+```
+
+## Render Count Tracking
+
+Track component render counts for debugging:
+
+```typescript
+import { useEffect, useRef } from "@rbxts/react"
+
+export function useRenderCount(label: string) {
+  const count = useRef(0)
+
+  useEffect(() => {
+    count.current += 1
+    print(`${label} rendered ${count.current} times`)
+  })
+
+  return count.current
+}
+
+// Usage
+const MyComponent: React.FC = () => {
+  const renderCount = useRenderCount("MyComponent")
+
+  return <textlabel Text={`Renders: ${renderCount}`} />
+}
+```
+
+## Error Handling and Recovery
+
+Graceful error handling in components:
+
+```typescript
+import { useEffect, useState } from "@rbxts/react"
+
+interface ErrorState {
+  hasError: boolean
+  error?: Error
+}
+
+const ErrorBoundaryComponent: React.FC<{ children?: React.ReactNode }> = ({
+  children,
+}) => {
+  const [error, setError] = useState<ErrorState>({ hasError: false })
+
+  useEffect(() => {
+    const handleError = (err: unknown) => {
+      setError({
+        hasError: true,
+        error: err instanceof Error ? err : new Error(tostring(err)),
+      })
+    }
+
+    // In a real app, set up a global error handler
+    // window.addEventListener("error", handleError)
+
+    return () => {
+      // Clean up
+    }
+  }, [])
+
+  if (error.hasError) {
+    return (
+      <frame BackgroundColor3={Color3.fromRGB(255, 200, 200)}>
+        <textlabel
+          Text={`Error: ${error.error?.message ?? "Unknown error"}`}
+          TextColor3={Color3.fromRGB(255, 0, 0)}
+        />
+      </frame>
+    )
+  }
+
+  return <frame>{children}</frame>
+}
+```
+
+## Best Practices
+
+1. **Keep components focused** - Single responsibility principle
+2. **Use custom hooks for reusable logic** - DRY principle
+3. **Memoize expensive computations** - Use useMemo and useCallback wisely
+4. **Type everything in TypeScript** - Leverage type safety
+5. **Profile performance** - Don't optimize without measurement
+6. **Avoid deeply nested components** - Extract sub-components
+7. **Keep props interfaces simple** - Easier to maintain and extend
+8. **Document complex patterns** - Help future maintainers
 
 ---
 
-**See also**: [Core API](../api/core.md), [Hooks API](../api/hooks.md)
+**See also**: [Core API](./core.md), [Hooks API](./hooks.md), [Context API](./context.md)

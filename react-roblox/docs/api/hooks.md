@@ -1,415 +1,544 @@
 # Hooks API
 
-Hooks allow functional components to have state and side effects. They're the modern way to write React components.
+Hooks allow functional components to have state and side effects. They're the modern way to write React components in TypeScript.
 
-## React.useState
+## useState
 
 Adds state to a functional component.
 
-```lua
-local value, setValue = React.useState(initialValue)
+```typescript
+const [value, setValue] = useState(initialValue)
 ```
 
 ### Parameters
-- `initialValue` (any): Initial state value or function returning initial value
-- Returns: `(currentValue, setterFunction)`
+- `initialValue` (value or function): Initial state value or a function that returns it
+- Returns: tuple of `[currentValue, setterFunction]`
 
 ### Setter Function
-- Can be called with a new value: `setValue(newValue)`
-- Can be called with an updater function: `setValue(function(prevValue) return newValue end)`
+- Call with new value: `setValue(newValue)`
+- Call with updater function: `setValue((prevValue) => newValue)`
 
-### Example
+### Examples
 
 **Simple counter:**
-```lua
-local function Counter(props)
-    local count, setCount = React.useState(0)
-    
-    return React.createElement("Frame", {},
-        React.createElement("TextLabel", {
-            Text = "Count: " .. tostring(count)
-        }),
-        React.createElement("TextButton", {
-            Text = "Increment",
-            [React.Event.Activated] = function()
-                setCount(count + 1)
-            end
-        })
-    )
-end
+```typescript
+const Counter: React.FC = () => {
+  const [count, setCount] = useState(0)
+
+  return (
+    <frame>
+      <textlabel Text={`Count: ${count}`} />
+      <textbutton
+        Text="Increment"
+        Event={{ Activated: () => setCount(count + 1) }}
+      />
+    </frame>
+  )
+}
 ```
 
-**With updater function:**
-```lua
-local function Counter(props)
-    local count, setCount = React.useState(0)
-    
-    return React.createElement("TextButton", {
-        Text = tostring(count),
-        [React.Event.Activated] = function()
-            -- Updater function ensures we use latest state
-            setCount(function(prevCount)
-                return prevCount + 1
-            end)
-        end
-    })
-end
+**With updater function for complex logic:**
+```typescript
+const Counter: React.FC = () => {
+  const [count, setCount] = useState(0)
+
+  return (
+    <textbutton
+      Text={tostring(count)}
+      Event={{
+        Activated: () => {
+          // Updater ensures we use the latest state value
+          setCount((prevCount) => prevCount + 1)
+        },
+      }}
+    />
+  )
+}
 ```
 
-## React.useEffect
+**With lazy initialization:**
+```typescript
+const ExpensiveComponent: React.FC = () => {
+  // Computation only runs once on mount
+  const [data, setData] = useState(() => {
+    return expensiveInitialization()
+  })
 
-Runs side effects after render. Replaces lifecycle methods for functional components.
+  return <textlabel Text={tostring(data)} />
+}
+```
 
-```lua
-React.useEffect(function()
-    -- Effect code runs here
-    
-    return function()
-        -- Cleanup function (optional)
-    end
-end, dependencies)
+## useEffect
+
+Runs side effects after render. Use for connections, timers, and other effects.
+
+```typescript
+useEffect(() => {
+  // Effect code runs here
+
+  return () => {
+    // Cleanup function (optional)
+  }
+}, dependencies)
 ```
 
 ### Parameters
 - `effectFunction` (function): Runs after render, can return cleanup function
-- `dependencies` (table | nil): Dependencies array
-  - If omitted: runs after every render
-  - If empty: runs only after first render
-  - If contains values: runs when any dependency changes
+- `dependencies` (array): When to re-run the effect
+  - Omit: runs after every render (rarely useful)
+  - Empty array `[]`: runs only after first render
+  - With values `[dep1, dep2]`: runs when dependencies change
 
 ### Examples
 
 **Setup and cleanup:**
-```lua
-local function MouseTracker(props)
-    local mousePos, setMousePos = React.useState(Vector2.new(0, 0))
-    local UserInputService = game:GetService("UserInputService")
-    
-    React.useEffect(function()
-        local connection = UserInputService.InputChanged:Connect(function(input, gameProcessed)
-            if input.UserInputType == Enum.UserInputType.MouseMovement then
-                setMousePos(input.Position)
-            end
-        end)
-        
-        return function()
-            connection:Disconnect()
-        end
-    end, {})
-    
-    return React.createElement("TextLabel", {
-        Text = string.format("Mouse: (%.0f, %.0f)", mousePos.X, mousePos.Y)
+```typescript
+import { useEffect, useState } from "@rbxts/react"
+import { UserInputService } from "@rbxts/services"
+
+const MouseTracker: React.FC = () => {
+  const [mousePos, setMousePos] = useState(new Vector2(0, 0))
+
+  useEffect(() => {
+    const connection = UserInputService.InputChanged.Connect((input) => {
+      if (input.UserInputType === Enum.UserInputType.MouseMovement) {
+        setMousePos(input.Position)
+      }
     })
-end
+
+    // Cleanup function - disconnects when component unmounts
+    return () => {
+      connection.Disconnect()
+    }
+  }, []) // Empty array = run once on mount
+
+  return (
+    <textlabel Text={`Mouse: (${mousePos.X.toFixed(0)}, ${mousePos.Y.toFixed(0)})`} />
+  )
+}
 ```
 
 **With dependencies:**
-```lua
-local function DataFetcher(props)
-    local data, setData = React.useState(nil)
-    
-    React.useEffect(function()
-        -- Runs when props.userId changes
-        print("Fetching data for user:", props.userId)
-        -- Fetch logic here
-    end, { props.userId })
-    
-    return React.createElement("TextLabel", {
-        Text = data or "Loading..."
-    })
-end
+```typescript
+interface DataFetcherProps {
+  userId: number
+}
+
+const DataFetcher: React.FC<DataFetcherProps> = ({ userId }) => {
+  const [data, setData] = useState<unknown>(undefined)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Runs when userId changes
+    setLoading(true)
+    // Fetch data for userId
+    setData("Loaded data")
+    setLoading(false)
+  }, [userId]) // Re-run when userId changes
+
+  return (
+    <textlabel
+      Text={loading ? "Loading..." : tostring(data)}
+    />
+  )
+}
 ```
 
-## React.useContext
+## useContext
 
 Reads a context value provided by a parent component.
 
-```lua
-local contextValue = React.useContext(ContextObject)
+```typescript
+const contextValue = useContext(ContextObject)
 ```
 
 ### Example
 
-**Theme context:**
-```lua
-local ThemeContext = React.createContext({
-    darkMode = false,
-    primary = Color3.new(1, 1, 1)
+**Using theme context:**
+```typescript
+import { createContext, useContext } from "@rbxts/react"
+
+interface Theme {
+  primary: Color3
+  secondary: Color3
+}
+
+const ThemeContext = createContext<Theme>({
+  primary: Color3.fromRGB(0, 0, 255),
+  secondary: Color3.fromRGB(200, 200, 200),
 })
 
-local function ThemedButton(props)
-    local theme = React.useContext(ThemeContext)
-    
-    return React.createElement("TextButton", {
-        BackgroundColor3 = theme.primary,
-        Text = props.label
-    })
-end
+const ThemedButton: React.FC = () => {
+  const theme = useContext(ThemeContext)
 
--- App setup
-React.createElement(ThemeContext.Provider, {
-    value = { darkMode = true, primary = Color3.new(0, 0, 0) }
-},
-    React.createElement(ThemedButton, { label = "Dark Button" })
+  return (
+    <textbutton
+      Text="Click me"
+      BackgroundColor3={theme.primary}
+    />
+  )
+}
+
+// Setup provider in app
+const App: React.FC = () => (
+  <ThemeContext.Provider
+    value={{
+      primary: Color3.fromRGB(100, 100, 255),
+      secondary: Color3.fromRGB(100, 100, 100),
+    }}
+  >
+    <ThemedButton />
+  </ThemeContext.Provider>
 )
 ```
 
-## React.useReducer
+## useReducer
 
-Manages complex state with a reducer function.
+Manages complex state with a reducer function. Useful for state machines and complex logic.
 
-```lua
-local state, dispatch = React.useReducer(reducerFunction, initialState)
+```typescript
+const [state, dispatch] = useReducer(reducerFunction, initialState)
 ```
 
 ### Example
 
-**Todo list reducer:**
-```lua
-local function reducer(state, action)
-    if action.type == "add" then
-        return {
-            todos = {...state.todos, action.todo},
-            count = state.count + 1
-        }
-    elseif action.type == "remove" then
-        return {
-            todos = {...(function()
-                local new = {}
-                for i, todo in ipairs(state.todos) do
-                    if i ~= action.index then
-                        table.insert(new, todo)
-                    end
-                end
-                return new
-            end)()},
-            count = state.count - 1
-        }
-    end
-end
+**Todo list with reducer:**
+```typescript
+import { useReducer } from "@rbxts/react"
 
-local function TodoApp(props)
-    local state, dispatch = React.useReducer(reducer, {
-        todos = {},
-        count = 0
-    })
-    
-    return React.createElement("Frame", {},
-        React.createElement("TextLabel", {
-            Text = "Todos: " .. tostring(state.count)
-        }),
-        React.createElement("TextButton", {
-            Text = "Add Todo",
-            [React.Event.Activated] = function()
-                dispatch({ type = "add", todo = "New task" })
-            end
-        })
+interface Todo {
+  id: number
+  text: string
+}
+
+type TodoAction =
+  | { type: "add"; text: string }
+  | { type: "remove"; id: number }
+  | { type: "toggle"; id: number }
+
+interface TodoState {
+  todos: Todo[]
+  nextId: number
+}
+
+function todoReducer(state: TodoState, action: TodoAction): TodoState {
+  switch (action.type) {
+    case "add":
+      return {
+        todos: [...state.todos, { id: state.nextId, text: action.text }],
+        nextId: state.nextId + 1,
+      }
+    case "remove":
+      return {
+        todos: state.todos.filter((t) => t.id !== action.id),
+        nextId: state.nextId,
+      }
+    case "toggle":
+      return {
+        todos: state.todos, // Update logic here
+        nextId: state.nextId,
+      }
+  }
+}
+
+const TodoApp: React.FC = () => {
+  const [state, dispatch] = useReducer(todoReducer, {
+    todos: [],
+    nextId: 0,
+  })
+
+  return (
+    <frame>
+      <textlabel Text={`Todos: ${state.todos.size()}`} />
+      <textbutton
+        Text="Add Todo"
+        Event={{
+          Activated: () => {
+            dispatch({ type: "add", text: "New task" })
+          },
+        }}
+      />
+    </frame>
+  )
+}
+```
+
+## useCallback
+
+Memoizes a callback function to prevent unnecessary re-renders of child components that depend on it.
+
+```typescript
+const memoizedCallback = useCallback(() => {
+  // Function body
+}, dependencies)
+```
+
+### Example
+
+```typescript
+interface ChildProps {
+  onItemClick: (item: string) => void
+}
+
+const Child: React.FC<ChildProps> = ({ onItemClick }) => {
+  return (
+    <textbutton
+      Text="Click"
+      Event={{
+        Activated: () => onItemClick("clicked"),
+      }}
+    />
+  )
+}
+
+const Parent: React.FC = () => {
+  const handleClick = useCallback((value: string) => {
+    print("Item clicked:", value)
+  }, []) // Empty dependency array = memoize once
+
+  return <Child onItemClick={handleClick} />
+}
+```
+
+## useMemo
+
+Memoizes a computed value to avoid expensive recalculations.
+
+```typescript
+const memoizedValue = useMemo(() => {
+  // Expensive computation
+  return computedValue
+}, dependencies)
+```
+
+### Example
+
+```typescript
+interface FilteredListProps {
+  items: Array<{ id: number; name: string }>
+  searchText: string
+}
+
+const FilteredList: React.FC<FilteredListProps> = ({ items, searchText }) => {
+  const filtered = useMemo(() => {
+    return items.filter((item) =>
+      item.name.lower().find(searchText.lower())[0] !== undefined
     )
-end
+  }, [items, searchText]) // Recompute when items or searchText changes
+
+  return (
+    <frame>
+      {filtered.map((item) => (
+        <textlabel key={item.id} Text={item.name} />
+      ))}
+    </frame>
+  )
+}
 ```
 
-## React.useCallback
+## useRef
 
-Memoizes a callback function. Use to prevent unnecessary re-renders of child components.
+Creates a mutable reference that persists across renders without causing re-renders.
 
-```lua
-local memoizedCallback = React.useCallback(function(...)
-    -- Function body
-end, dependencies)
-```
-
-### Example
-
-```lua
-local function Parent(props)
-    local onClick = React.useCallback(function(value)
-        print("Item clicked:", value)
-    end, {})
-    
-    return React.createElement(Child, {
-        onItemClick = onClick
-    })
-end
-```
-
-## React.useMemo
-
-Memoizes a computed value. Use for expensive calculations.
-
-```lua
-local memoizedValue = React.useMemo(function()
-    -- Expensive computation
-    return computedValue
-end, dependencies)
-```
-
-### Example
-
-```lua
-local function FilteredList(props)
-    local filtered = React.useMemo(function()
-        return table.filter(props.items, function(item)
-            return string.find(item.name, props.searchText) ~= nil
-        end)
-    end, { props.items, props.searchText })
-    
-    return React.createElement("Frame", {},
-        -- Render filtered items
-    )
-end
-```
-
-## React.useRef
-
-Creates a mutable ref that persists across renders without causing re-renders.
-
-```lua
-local ref = React.useRef(initialValue)
--- Access with: ref.current
+```typescript
+const ref = useRef<T>(initialValue)
+// Access with: ref.current
 ```
 
 ### Examples
 
-**Direct DOM access:**
-```lua
-local function TextBoxWithFocus(props)
-    local textBoxRef = React.useRef(nil)
-    
-    return React.createElement("Frame", {},
-        React.createElement("TextBox", {
-            ref = textBoxRef
-        }),
-        React.createElement("TextButton", {
-            Text = "Focus",
-            [React.Event.Activated] = function()
-                textBoxRef.current:CaptureFocus()
-            end
-        })
-    )
-end
+**Direct instance access:**
+```typescript
+import { useRef } from "@rbxts/react"
+
+const TextBoxWithFocus: React.FC = () => {
+  const textBoxRef = useRef<TextBox>(null)
+
+  const handleFocus = () => {
+    if (textBoxRef.current) {
+      textBoxRef.current.CaptureFocus()
+    }
+  }
+
+  return (
+    <>
+      <textbox ref={textBoxRef} />
+      <textbutton Text="Focus" Event={{ Activated: handleFocus }} />
+    </>
+  )
+}
 ```
 
 **Storing mutable values:**
-```lua
-local function Timer(props)
-    local timerRef = React.useRef(0)
-    
-    React.useEffect(function()
-        local connection
-        connection = game:GetService("RunService").Heartbeat:Connect(function(deltaTime)
-            timerRef.current = timerRef.current + deltaTime
-            if timerRef.current > 5 then
-                connection:Disconnect()
-            end
-        end)
-        
-        return function()
-            if connection then connection:Disconnect() end
-        end
-    end, {})
-    
-    return React.createElement("TextLabel", {
-        Text = string.format("Time: %.1f", timerRef.current)
+```typescript
+import { useRef, useEffect } from "@rbxts/react"
+import { RunService } from "@rbxts/services"
+
+const Timer: React.FC = () => {
+  const timerRef = useRef(0)
+
+  useEffect(() => {
+    const connection = RunService.Heartbeat.Connect((deltaTime: number) => {
+      timerRef.current += deltaTime
     })
-end
+
+    return () => {
+      connection.Disconnect()
+    }
+  }, [])
+
+  return <textlabel Text={`Time: ${timerRef.current.toFixed(1)}`} />
+}
 ```
 
-## React.useImperativeHandle
+## useImperativeHandle
 
-Customizes the ref exposed by a component when using `forwardRef`.
+Customizes the instance value exposed when using `forwardRef`. Rarely needed in most applications.
 
-```lua
-React.useImperativeHandle(ref, function()
-    return {
-        customMethod = function() end,
-        customProp = value
-    }
-end, dependencies)
+```typescript
+useImperativeHandle(ref, () => ({
+  customMethod: () => {},
+  customProp: value,
+}), dependencies)
 ```
 
 ### Example
 
-```lua
-local ScrollFrame = React.forwardRef(function(props, ref)
-    local frameRef = React.useRef(nil)
-    
-    React.useImperativeHandle(ref, function()
-        return {
-            scrollToTop = function()
-                frameRef.current.CanvasPosition = Vector2.new(0, 0)
-            end,
-            scrollToBottom = function()
-                frameRef.current.CanvasPosition = Vector2.new(0, frameRef.current.CanvasSize.Y.Offset)
-            end
-        }
-    end, {})
-    
-    return React.createElement("ScrollingFrame", {
-        ref = frameRef,
-        Size = UDim2.fromScale(1, 1)
-    })
-end)
+```typescript
+import { forwardRef, useImperativeHandle, useRef } from "@rbxts/react"
+
+interface ScrollRef {
+  scrollToTop: () => void
+  scrollToBottom: () => void
+}
+
+const ScrollableFrame = forwardRef<ScrollRef, {}>(({}, ref) => {
+  const frameRef = useRef<ScrollingFrame>(null)
+
+  useImperativeHandle(ref, () => ({
+    scrollToTop: () => {
+      if (frameRef.current) {
+        frameRef.current.CanvasPosition = new Vector2(0, 0)
+      }
+    },
+    scrollToBottom: () => {
+      if (frameRef.current) {
+        frameRef.current.CanvasPosition = new Vector2(
+          0,
+          frameRef.current.CanvasSize.Y.Offset
+        )
+      }
+    },
+  }), [])
+
+  return (
+    <scrollingframe
+      ref={frameRef}
+      Size={new UDim2(1, 0, 1, 0)}
+    />
+  )
+})
 ```
 
-## React.useLayoutEffect
+## useLayoutEffect
 
-Like `useEffect`, but runs synchronously after DOM mutations. Use sparingly.
+Like `useEffect`, but runs synchronously after mutations. Use sparingly - prefer `useEffect` for most cases.
 
-```lua
-React.useLayoutEffect(function()
-    -- Runs synchronously after render
-    return function()
-        -- Cleanup
-    end
-end, dependencies)
+```typescript
+useLayoutEffect(() => {
+  // Runs synchronously after render
+  return () => {
+    // Cleanup
+  }
+}, dependencies)
 ```
 
 ## Rules of Hooks
 
 1. **Only call hooks at the top level** - Don't call hooks inside loops, conditions, or nested functions
-2. **Only call hooks from React components** - Call from functional components or custom hooks, not regular functions
+2. **Only call hooks from React components** - Call from functional components or custom hooks
 3. **Use custom hooks** - Extract hook logic into custom hooks for reusability
+
+### Bad Example (breaks rules)
+```typescript
+// ❌ BAD - calling hook inside condition
+const BadComponent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
+  if (isActive) {
+    const [count, setCount] = useState(0) // ❌ WRONG
+  }
+  return <frame />
+}
+
+// ❌ BAD - calling hook inside loop
+const items = [1, 2, 3]
+items.forEach((item) => {
+  useState(item) // ❌ WRONG
+})
+```
 
 ## Custom Hooks
 
 Create reusable hook logic by extracting into functions starting with "use".
 
-```lua
--- Custom hook
-local function useFormInput(initialValue)
-    local value, setValue = React.useState(initialValue)
-    
-    return {
-        value = value,
-        onChange = function(newValue)
-            setValue(newValue)
-        end,
-        reset = function()
-            setValue(initialValue)
-        end
-    }
-end
+```typescript
+// src/hooks/use-form-input.ts
+import { useState } from "@rbxts/react"
 
--- Usage
-local function Form(props)
-    local username = useFormInput("")
-    local email = useFormInput("")
-    
-    return React.createElement("Frame", {},
-        React.createElement("TextBox", {
-            Text = username.value,
-            [React.Event.FocusLost] = function(rbx)
-                username.onChange(rbx.Text)
-            end
-        }),
-        React.createElement("TextBox", {
-            Text = email.value,
-            [React.Event.FocusLost] = function(rbx)
-                email.onChange(rbx.Text)
-            end
-        })
-    )
-end
+interface FormInputHandlers {
+  value: string
+  onChange: (value: string) => void
+  reset: () => void
+}
+
+export function useFormInput(initialValue: string = ""): FormInputHandlers {
+  const [value, setValue] = useState(initialValue)
+
+  return {
+    value,
+    onChange: (newValue: string) => setValue(newValue),
+    reset: () => setValue(initialValue),
+  }
+}
+```
+
+**Usage:**
+```typescript
+// src/components/contact-form/contact-form.tsx
+import { useFormInput } from "@/hooks/use-form-input"
+
+const ContactForm: React.FC = () => {
+  const name = useFormInput("")
+  const email = useFormInput("")
+
+  const handleSubmit = () => {
+    print(`Name: ${name.value}, Email: ${email.value}`)
+    name.reset()
+    email.reset()
+  }
+
+  return (
+    <frame>
+      <textbox
+        Text={name.value}
+        PlaceholderText="Name"
+        Event={{
+          FocusLost: (rbx: TextBox) => name.onChange(rbx.Text),
+        }}
+      />
+      <textbox
+        Text={email.value}
+        PlaceholderText="Email"
+        Event={{
+          FocusLost: (rbx: TextBox) => email.onChange(rbx.Text),
+        }}
+      />
+      <textbutton
+        Text="Submit"
+        Event={{ Activated: handleSubmit }}
+      />
+    </frame>
+  )
+}
 ```
 
 ---

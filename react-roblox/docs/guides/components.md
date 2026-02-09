@@ -1,369 +1,493 @@
-# Component Patterns
+# Component Patterns and Best Practices
 
-Common patterns and best practices for building React components in Roblox.
+Common patterns and best practices for building React components in Roblox with **roblox-typescript**.
 
-## Functional Components
+## Functional Components (Recommended)
 
-The modern, recommended approach using hooks:
+The modern approach using hooks and TypeScript:
 
-```lua
-local function MyComponent(props)
-    return React.createElement("Frame", {
-        Size = props.size
-    })
-end
+```typescript
+// src/components/my-frame/my-frame.tsx
+import React from "@rbxts/react"
+
+interface MyFrameProps {
+  size?: UDim2
+}
+
+const MyFrame: React.FC<MyFrameProps> = ({ size = new UDim2(1, 0, 1, 0) }) => {
+  return <frame Size={size} />
+}
+
+export default MyFrame
 ```
 
-## Class Components
-
-For complex state management and lifecycle control:
-
-```lua
-local MyComponent = React.Component:extend("MyComponent")
-
-function MyComponent:init()
-    self:setState({
-        count = 0
-    })
-end
-
-function MyComponent:render()
-    return React.createElement("TextLabel", {
-        Text = tostring(self.state.count)
-    })
-end
-```
+**Conventions:**
+- Component name: `MyFrame` (PascalCase)
+- File name: `my-frame.tsx` (kebab-case)
+- Props interface: `MyFrameProps`
 
 ## Composition Over Inheritance
 
-Build complex UIs by composing simpler components:
+Build complex UIs by combining simpler components:
 
-```lua
-local function CardHeader(props)
-    return React.createElement("TextLabel", {
-        Text = props.title,
-        Size = UDim2.fromScale(1, 0.1)
-    })
-end
+```typescript
+// src/components/card/card.tsx
+import React from "@rbxts/react"
 
-local function CardContent(props)
-    return React.createElement("Frame", {
-        Size = UDim2.fromScale(1, 0.8),
-        Position = UDim2.fromScale(0, 0.1)
-    }, props.children)
-end
+interface CardHeaderProps {
+  title: string
+}
 
-local function Card(props)
-    return React.createElement("Frame", {
-        Size = props.size or UDim2.fromOffset(400, 300)
-    },
-        React.createElement(CardHeader, { title = props.title }),
-        React.createElement(CardContent, {}, props.children)
-    )
-end
+const CardHeader: React.FC<CardHeaderProps> = ({ title }) => (
+  <textlabel Text={title} Size={new UDim2(1, 0, 0.1, 0)} />
+)
+
+interface CardContentProps {
+  children?: React.ReactNode
+}
+
+const CardContent: React.FC<CardContentProps> = ({ children }) => (
+  <frame Size={new UDim2(1, 0, 0.8, 0)} Position={new UDim2(0, 0, 0.1, 0)}>
+    {children}
+  </frame>
+)
+
+interface CardProps {
+  title: string
+  size?: UDim2
+  children?: React.ReactNode
+}
+
+const Card: React.FC<CardProps> = ({
+  title,
+  size = new UDim2(0, 400, 0, 300),
+  children,
+}) => (
+  <frame Size={size}>
+    <CardHeader title={title} />
+    <CardContent>{children}</CardContent>
+  </frame>
+)
+
+export default Card
 ```
+
+**Key Points:**
+- Each sub-component has its own interface
+- Child components are exported if reusable
+- Main component is the default export
 
 ## Higher-Order Components (HOC)
 
 Enhance components with additional functionality:
 
-```lua
-local function withTheme(Component)
-    return function(props)
-        local theme = React.useContext(ThemeContext)
-        
-        return React.createElement(Component, table.assign({}, props, {
-            theme = theme
-        }))
-    end
-end
+```typescript
+// src/utils/with-theme.ts
+import React from "@rbxts/react"
+import { ThemeContext, Theme } from "@/context/theme-context"
 
--- Usage
-local ThemedButton = withTheme(Button)
+interface WithThemeProps {
+  theme: Theme
+}
+
+export function withTheme<P extends WithThemeProps>(
+  Component: React.ComponentType<P>
+): React.FC<Omit<P, "theme">> {
+  const WithThemeComponent: React.FC<Omit<P, "theme">> = (props) => {
+    const theme = React.useContext(ThemeContext)
+    return <Component {...(props as P)} theme={theme} />
+  }
+  return WithThemeComponent
+}
 ```
 
-## Render Props Pattern
+Usage:
+```typescript
+// src/components/themed-button/themed-button.tsx
+interface ThemedButtonProps extends WithThemeProps {
+  text: string
+  onClick?: () => void
+}
 
-Pass rendering logic as a function:
-
-```lua
-local function DataProvider(props)
-    local data, setData = React.useState(nil)
-    
-    React.useEffect(function()
-        -- Fetch data
-        setData({ id = 1, name = "Item" })
-    end, {})
-    
-    return props.children(data)
-end
-
--- Usage
-React.createElement(DataProvider, {},
-    function(data)
-        return React.createElement("TextLabel", {
-            Text = data and data.name or "Loading..."
-        })
-    end
+const ThemedButton: React.FC<ThemedButtonProps> = ({
+  theme,
+  text,
+  onClick,
+}) => (
+  <textbutton
+    Text={text}
+    BackgroundColor3={theme.primaryColor}
+    Event={{ Activated: onClick }}
+  />
 )
+
+export default withTheme(ThemedButton)
 ```
 
 ## Custom Hooks Pattern
 
-Extract reusable stateful logic:
+Extract reusable stateful logic into hooks:
 
-```lua
-local function useLocalStorage(key, initialValue)
-    local value, setValue = React.useState(function()
-        -- Load from storage on init
-        local stored =--[[load from storage]]
-        return stored or initialValue
-    end)
-    
-    React.useEffect(function()
-        -- Save to storage on change
-        --[[save value]]
-    end, { value })
-    
-    return value, setValue
-end
+```typescript
+// src/hooks/use-local-storage.ts
+import React, { useState, useEffect } from "@rbxts/react"
 
--- Usage
-local function Form()
-    local name, setName = useLocalStorage("formName", "")
-    
-    return React.createElement("TextBox", {
-        Text = name,
-        [React.Event.FocusLost] = function(rbx)
-            setName(rbx.Text)
-        end
-    })
-end
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T
+): [T, (value: T) => void] {
+  const [value, setValue] = useState<T>(() => {
+    // Load from storage on init
+    // (Implementation depends on your storage solution)
+    return initialValue
+  })
+
+  useEffect(() => {
+    // Save to storage whenever value changes
+    // (Implementation depends on your storage solution)
+  }, [value])
+
+  return [value, setValue]
+}
+```
+
+Usage:
+```typescript
+// src/components/persistent-form/persistent-form.tsx
+import { useLocalStorage } from "@/hooks/use-local-storage"
+
+const PersistentForm: React.FC = () => {
+  const [name, setName] = useLocalStorage("formName", "")
+
+  return (
+    <textbox
+      Text={name}
+      PlaceholderText="Enter name"
+      Event={{
+        FocusLost: (rbx: TextBox) => setName(rbx.Text),
+      }}
+    />
+  )
+}
+
+export default PersistentForm
 ```
 
 ## Container/Presentational Pattern
 
-Separate data logic from UI:
+Separate data logic from UI rendering:
 
-```lua
--- Container (data logic)
-local function UserListContainer(props)
-    local users, setUsers = React.useState({})
-    
-    React.useEffect(function()
-        -- Fetch users
-        setUsers({ { id = 1, name = "Alice" }, { id = 2, name = "Bob" } })
-    end, {})
-    
-    return React.createElement(UserListPresentation, {
-        users = users,
-        onSelectUser = function(userId)
-            print("Selected:", userId)
-        end
-    })
-end
+```typescript
+// src/components/user-list/user-list-presentation.tsx
+export interface UserListPresentationProps {
+  users: User[]
+  onSelectUser: (userId: number) => void
+  isLoading?: boolean
+}
 
--- Presentation (pure UI)
-local function UserListPresentation(props)
-    return React.createElement("ScrollingFrame", {
-        Size = UDim2.fromScale(1, 1)
-    },
-        React.Children.map(props.users, function(user)
-            return React.createElement("TextButton", {
-                Text = user.name,
-                [React.Event.Activated] = function()
-                    props.onSelectUser(user.id)
-                end
-            })
-        end)
-    )
-end
+const UserListPresentation: React.FC<UserListPresentationProps> = ({
+  users,
+  onSelectUser,
+  isLoading,
+}) => {
+  if (isLoading) {
+    return <textlabel Text="Loading..." />
+  }
+
+  return (
+    <scrollingframe Size={new UDim2(1, 0, 1, 0)}>
+      <uilistlayout />
+      {users.map((user) => (
+        <textbutton
+          key={user.id}
+          Text={user.name}
+          Event={{
+            Activated: () => onSelectUser(user.id),
+          }}
+        />
+      ))}
+    </scrollingframe>
+  )
+}
+
+export default UserListPresentation
+```
+
+```typescript
+// src/components/user-list/user-list-container.tsx
+import { useState, useEffect } from "@rbxts/react"
+import UserListPresentation from "./user-list-presentation"
+
+interface User {
+  id: number
+  name: string
+}
+
+const UserListContainer: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Fetch users
+    setUsers([
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" },
+    ])
+    setIsLoading(false)
+  }, [])
+
+  return (
+    <UserListPresentation
+      users={users}
+      isLoading={isLoading}
+      onSelectUser={(userId) => console.log("Selected:", userId)}
+    />
+  )
+}
+
+export default UserListContainer
 ```
 
 ## Context Provider Pattern
 
-Share global state across components:
+Share global state across the component tree:
 
-```lua
-local ThemeContext = React.createContext({
-    darkMode = false
+```typescript
+// src/context/theme-context.ts
+import React from "@rbxts/react"
+
+export interface Theme {
+  primaryColor: Color3
+  secondaryColor: Color3
+  darkMode: boolean
+}
+
+export const ThemeContext = React.createContext<Theme>({
+  primaryColor: Color3.fromRGB(0, 0, 255),
+  secondaryColor: Color3.fromRGB(200, 200, 200),
+  darkMode: false,
 })
+```
 
-local function ThemeProvider(props)
-    local darkMode, setDarkMode = React.useState(false)
-    
-    return React.createElement(ThemeContext.Provider, {
-        value = {
-            darkMode = darkMode,
-            toggleDarkMode = function()
-                setDarkMode(not darkMode)
-            end
-        }
-    }, props.children)
-end
+```typescript
+// src/components/theme-provider/theme-provider.tsx
+import React, { useState } from "@rbxts/react"
+import { ThemeContext, Theme } from "@/context/theme-context"
 
--- Usage
-local function App()
-    return React.createElement(ThemeProvider, {},
-        React.createElement(HomePage, {})
-    )
-end
+interface ThemeProviderProps {
+  children?: React.ReactNode
+}
+
+const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+  const [darkMode, setDarkMode] = useState(false)
+
+  const theme: Theme = {
+    primaryColor: darkMode
+      ? Color3.fromRGB(50, 50, 50)
+      : Color3.fromRGB(255, 255, 255),
+    secondaryColor: Color3.fromRGB(200, 200, 200),
+    darkMode,
+  }
+
+  return (
+    <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
+  )
+}
+
+export default ThemeProvider
 ```
 
 ## Conditional Rendering
 
-Render different components based on state/props:
+Render different components based on state or props:
 
-```lua
-local function Greeting(props)
-    if props.isLoggedIn then
-        return React.createElement("TextLabel", {
-            Text = "Welcome, " .. props.userName
-        })
-    else
-        return React.createElement("TextLabel", {
-            Text = "Please log in"
-        })
-    end
-end
+```typescript
+interface GreetingProps {
+  isLoggedIn: boolean
+  userName?: string
+}
 
--- Or using ternary
-local function Message(props)
-    return React.createElement("TextLabel", {
-        Text = if props.error then "Error occurred" else "All good"
-    })
-end
+const Greeting: React.FC<GreetingProps> = ({ isLoggedIn, userName }) => {
+  return (
+    <textlabel
+      Text={isLoggedIn ? `Welcome, ${userName}` : "Please log in"}
+    />
+  )
+}
 
--- Or returning nil to render nothing
-local function OptionalContent(props)
-    return props.showContent and React.createElement("Frame", {}) or nil
-end
+// Or using early returns
+const Message: React.FC<{ error?: string }> = ({ error }) => {
+  if (error) {
+    return <textlabel Text={`Error: ${error}`} TextColor3={Color3.fromRGB(255, 0, 0)} />
+  }
+
+  return <textlabel Text="All good!" TextColor3={Color3.fromRGB(0, 255, 0)} />
+}
+
+// Or returning null to render nothing
+interface OptionalContentProps {
+  show: boolean
+  children?: React.ReactNode
+}
+
+const OptionalContent: React.FC<OptionalContentProps> = ({ show, children }) => {
+  return show ? <frame>{children}</frame> : null
+}
 ```
 
-## List Rendering
+## List Rendering with Keys
 
-Render lists efficiently:
+Render lists efficiently with proper keys:
 
-```lua
-local function TodoList(props)
-    return React.createElement("ScrollingFrame", {
-        Size = UDim2.fromScale(1, 1)
-    },
-        React.Children.map(props.todos, function(todo, index)
-            return React.createElement("TextLabel", {
-                Text = todo.text,
-                LayoutOrder = index,
-                -- Always provide unique keys for lists
-                key = todo.id  -- Important!
-            })
-        end)
-    )
-end
+```typescript
+interface TodoListProps {
+  todos: Todo[]
+}
 
--- With UIListLayout for automatic layout
-local function AutoLayoutList(props)
-    return React.createElement("Frame", {
-        Size = UDim2.fromScale(1, 1),
-        AutomaticSize = Enum.AutomaticSize.Y
-    },
-        React.createElement("UIListLayout", {
-            Padding = UDim.new(0, 10),
-            HorizontalAlignment = Enum.HorizontalAlignment.Left
-        }),
-        React.Children.map(props.items, function(item, index)
-            return React.createElement("TextLabel", {
-                Text = item,
-                LayoutOrder = index,
-                Size = UDim2.fromScale(1, 0),
-                AutomaticSize = Enum.AutomaticSize.Y
-            })
-        end)
-    )
-end
+const TodoList: React.FC<TodoListProps> = ({ todos }) => {
+  return (
+    <scrollingframe Size={new UDim2(1, 0, 1, 0)}>
+      <uilistlayout />
+      {todos.map((todo) => (
+        <textlabel
+          key={todo.id}
+          Text={todo.text}
+          LayoutOrder={todo.id}
+          Size={new UDim2(1, 0, 0, 30)}
+        />
+      ))}
+    </scrollingframe>
+  )
+}
+
+export default TodoList
+```
+
+**Important:** Always use a unique, stable `key` prop (not array index):
+```typescript
+// ❌ Bad - uses array index
+items.map((item, index) => <frame key={index} />)
+
+// ✅ Good - uses item ID
+items.map((item) => <frame key={item.id} />)
 ```
 
 ## Form Handling
 
-Managing form state:
+Managing form state with custom hooks:
 
-```lua
-local function useFormInput(initialValue)
-    local value, setValue = React.useState(initialValue or "")
-    
-    return {
-        value = value,
-        onChange = function(newValue)
-            setValue(newValue)
-        end,
-        reset = function()
-            setValue(initialValue or "")
-        end
-    }
-end
+```typescript
+// src/hooks/use-form-input.ts
+import { useState } from "@rbxts/react"
 
-local function ContactForm()
-    local name = useFormInput("")
-    local email = useFormInput("")
-    
-    return React.createElement("Frame", {},
-        React.createElement("TextBox", {
-            Text = name.value,
-            PlaceholderText = "Name",
-            [React.Event.FocusLost] = function(rbx)
-                name.onChange(rbx.Text)
-            end
-        }),
-        React.createElement("TextBox", {
-            Text = email.value,
-            PlaceholderText = "Email",
-            [React.Event.FocusLost] = function(rbx)
-                email.onChange(rbx.Text)
-            end
-        }),
-        React.createElement("TextButton", {
-            Text = "Submit",
-            [React.Event.Activated] = function()
-                print("Submitting:", name.value, email.value)
-                name.reset()
-                email.reset()
-            end
-        })
-    )
-end
+interface FormInputHandlers {
+  value: string
+  onChange: (value: string) => void
+  reset: () => void
+}
+
+export function useFormInput(initialValue: string = ""): FormInputHandlers {
+  const [value, setValue] = useState(initialValue)
+
+  return {
+    value,
+    onChange: (newValue: string) => setValue(newValue),
+    reset: () => setValue(initialValue),
+  }
+}
+```
+
+```typescript
+// src/components/contact-form/contact-form.tsx
+import { useFormInput } from "@/hooks/use-form-input"
+
+const ContactForm: React.FC = () => {
+  const name = useFormInput("")
+  const email = useFormInput("")
+
+  const handleSubmit = () => {
+    console.log("Submitting:", { name: name.value, email: email.value })
+    name.reset()
+    email.reset()
+  }
+
+  return (
+    <frame>
+      <textbox
+        Text={name.value}
+        PlaceholderText="Name"
+        Event={{
+          FocusLost: (rbx: TextBox) => name.onChange(rbx.Text),
+        }}
+      />
+      <textbox
+        Text={email.value}
+        PlaceholderText="Email"
+        Event={{
+          FocusLost: (rbx: TextBox) => email.onChange(rbx.Text),
+        }}
+      />
+      <textbutton
+        Text="Submit"
+        Event={{
+          Activated: handleSubmit,
+        }}
+      />
+    </frame>
+  )
+}
+
+export default ContactForm
 ```
 
 ## Performance Optimization
 
 Memoize components and callbacks to prevent unnecessary re-renders:
 
-```lua
--- Memoize expensive component
-local ExpensiveComponent = React.memo(function(props)
-    -- Only re-renders if props change
-    return React.createElement("Frame", {})
-end)
+```typescript
+// Memoize component - only re-renders if props change
+interface ExpensiveComponentProps {
+  data: unknown
+}
 
--- Memoize callbacks
-local function Parent()
-    local handleClick = React.useCallback(function()
-        print("Clicked")
-    end, {})
-    
-    return React.createElement(ChildButton, {
-        onClick = handleClick
-    })
-end
+const ExpensiveComponent = React.memo<ExpensiveComponentProps>(({ data }) => {
+  // This only re-renders when `data` changes
+  return <frame />
+})
 
--- Memoize computed values
-local function FilteredList(props)
-    local filtered = React.useMemo(function()
-        return table.filter(props.items, props.filterFn)
-    end, { props.items, props.filterFn })
-    
-    return React.createElement("Frame", {}, props.children(filtered))
-end
+// Memoize callbacks
+interface ParentProps {}
+
+const Parent: React.FC<ParentProps> = () => {
+  const handleClick = React.useCallback(() => {
+    console.log("Clicked")
+  }, [])
+
+  return <ChildButton onClick={handleClick} />
+}
+
+// Memoize computed values
+interface FilteredListProps {
+  items: string[]
+  filterFn: (item: string) => boolean
+}
+
+const FilteredList: React.FC<FilteredListProps> = ({ items, filterFn }) => {
+  const filtered = React.useMemo(
+    () => items.filter(filterFn),
+    [items, filterFn]
+  )
+
+  return (
+    <frame>
+      {filtered.map((item) => (
+        <textlabel key={item} Text={item} />
+      ))}
+    </frame>
+  )
+}
 ```
 
 ---
 
-**See also**: [Getting Started](./getting-started.md), [Hooks API](../api/hooks.md)
+**See also**: [Getting Started](./getting-started.md), [Hooks API](../api/hooks.md), [Project Structure](./project-structure.md)

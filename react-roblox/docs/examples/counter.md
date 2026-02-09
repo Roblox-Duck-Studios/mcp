@@ -1,167 +1,286 @@
 # Example: Simple Counter
 
-A basic example demonstrating React state and event handling.
+A basic example demonstrating React state and event handling in TypeScript.
 
-## Code
+## Basic Counter
 
-```lua
--- src/components/Counter.tsx
-import React, { useState } from "@react-lua/react"
+```typescript
+// src/components/counter/counter.tsx
+import React, { useState } from "@rbxts/react"
 
-local function Counter(props: { initialValue: number? })
-    local initialValue = props.initialValue or 0
-    local count, setCount = React.useState(initialValue)
-    
-    return React.createElement("Frame", {
-        Size = UDim2.fromOffset(300, 150),
-        BackgroundColor3 = Color3.fromRGB(240, 240, 240),
-        BorderMode = Enum.BorderMode.Outline
-    },
-        React.createElement("TextLabel", {
-            Text = "Counter Example",
-            Size = UDim2.fromScale(1, 0.3),
-            BackgroundTransparency = 1,
-            TextSize = 18,
-            Font = Enum.Font.GothamBold
-        }),
-        React.createElement("TextLabel", {
-            Text = tostring(count),
-            Size = UDim2.fromScale(1, 0.4),
-            Position = UDim2.fromScale(0, 0.3),
-            BackgroundTransparency = 1,
-            TextSize = 48,
-            Font = Enum.Font.GothamBold,
-            TextColor3 = Color3.fromRGB(59, 89, 152)
-        }),
-        React.createElement("Frame", {
-            Size = UDim2.fromScale(1, 0.3),
-            Position = UDim2.fromScale(0, 0.7),
-            BackgroundTransparency = 1
-        },
-            React.createElement("TextButton", {
-                Text = "-",
-                Size = UDim2.fromScale(0.33, 1),
-                BackgroundColor3 = Color3.fromRGB(231, 76, 60),
-                TextColor3 = Color3.new(1, 1, 1),
-                Font = Enum.Font.GothamBold,
-                TextSize = 24,
-                [React.Event.Activated] = function()
-                    setCount(count - 1)
-                end
-            }),
-            React.createElement("TextButton", {
-                Text = "Reset",
-                Size = UDim2.fromScale(0.33, 1),
-                Position = UDim2.fromScale(0.33, 0),
-                BackgroundColor3 = Color3.fromRGB(149, 165, 166),
-                TextColor3 = Color3.new(1, 1, 1),
-                Font = Enum.Font.GothamBold,
-                TextSize = 16,
-                [React.Event.Activated] = function()
-                    setCount(initialValue)
-                end
-            }),
-            React.createElement("TextButton", {
-                Text = "+",
-                Size = UDim2.fromScale(0.33, 1),
-                Position = UDim2.fromScale(0.66, 0),
-                BackgroundColor3 = Color3.fromRGB(46, 204, 113),
-                TextColor3 = Color3.new(1, 1, 1),
-                Font = Enum.Font.GothamBold,
-                TextSize = 24,
-                [React.Event.Activated] = function()
-                    setCount(count + 1)
-                end
-            })
-        )
-    )
-end
+interface CounterProps {
+  initialValue?: number
+}
 
-return Counter
+const Counter: React.FC<CounterProps> = ({ initialValue = 0 }) => {
+  const [count, setCount] = useState(initialValue)
+
+  return (
+    <frame
+      Size={new UDim2(0, 300, 0, 150)}
+      BackgroundColor3={Color3.fromRGB(240, 240, 240)}
+      BorderMode={Enum.BorderMode.Outline}
+    >
+      <textlabel
+        Text="Counter Example"
+        Size={new UDim2(1, 0, 0.3, 0)}
+        BackgroundTransparency={1}
+        TextSize={18}
+        Font={Enum.Font.GothamBold}
+      />
+      <textlabel
+        Text={tostring(count)}
+        Size={new UDim2(1, 0, 0.4, 0)}
+        Position={new UDim2(0, 0, 0.3, 0)}
+        BackgroundTransparency={1}
+        TextSize={48}
+        Font={Enum.Font.GothamBold}
+        TextColor3={Color3.fromRGB(59, 89, 152)}
+      />
+      <frame
+        Size={new UDim2(1, 0, 0.3, 0)}
+        Position={new UDim2(0, 0, 0.7, 0)}
+        BackgroundTransparency={1}
+      >
+        <uilistlayout Orientation={Enum.UIListLayout.FillDirection.Horizontal} />
+        <textbutton
+          Text="-"
+          Size={new UDim2(0.33, 0, 1, 0)}
+          BackgroundColor3={Color3.fromRGB(231, 76, 60)}
+          TextColor3={new Color3(1, 1, 1)}
+          Font={Enum.Font.GothamBold}
+          TextSize={24}
+          Event={{
+            Activated: () => setCount(count - 1),
+          }}
+        />
+        <textbutton
+          Text="Reset"
+          Size={new UDim2(0.33, 0, 1, 0)}
+          BackgroundColor3={Color3.fromRGB(149, 165, 166)}
+          TextColor3={new Color3(1, 1, 1)}
+          Font={Enum.Font.GothamBold}
+          TextSize={16}
+          Event={{
+            Activated: () => setCount(initialValue),
+          }}
+        />
+        <textbutton
+          Text="+"
+          Size={new UDim2(0.33, 0, 1, 0)}
+          BackgroundColor3={Color3.fromRGB(46, 204, 113)}
+          TextColor3={new Color3(1, 1, 1)}
+          Font={Enum.Font.GothamBold}
+          TextSize={24}
+          Event={{
+            Activated: () => setCount(count + 1),
+          }}
+        />
+      </frame>
+    </frame>
+  )
+}
+
+export default Counter
 ```
 
 ## Usage
 
-```lua
--- In your main app
-React.createElement(Counter, {
-    initialValue = 10
-})
+```typescript
+// src/components/app.tsx
+import React from "@rbxts/react"
+import Counter from "@/components/counter"
+
+const App: React.FC = () => {
+  return (
+    <frame Size={new UDim2(1, 0, 1, 0)}>
+      <Counter initialValue={10} />
+    </frame>
+  )
+}
+
+export default App
 ```
 
-## Key Concepts Demonstrated
+## Key Concepts
 
-1. **useState** - Managing component state (count)
-2. **Event Handling** - Responding to button clicks
-3. **Props** - Passing initial value from parent
-4. **Conditional Rendering** - Display count based on state
-5. **UI Layout** - Organizing elements with frames
+1. **useState** - Managing component state (`count`)
+2. **Event Handling** - Responding to button clicks with `Event`
+3. **Props** - Passing `initialValue` from parent to child
+4. **Conditional Rendering** - Display count based on current state
+5. **UI Composition** - Organizing elements with frames
 
-## Variations
+## Custom Hook Version
 
-### With Custom Hook
+Extract counter logic into a reusable custom hook:
 
-```lua
-local function useCounter(initialValue)
-    local count, setCount = React.useState(initialValue or 0)
-    
-    return {
-        count = count,
-        increment = function()
-            setCount(count + 1)
-        end,
-        decrement = function()
-            setCount(count - 1)
-        end,
-        reset = function()
-            setCount(initialValue or 0)
-        end
-    }
-end
+```typescript
+// src/hooks/use-counter.ts
+import { useState } from "@rbxts/react"
 
-local function Counter(props)
-    local counter = useCounter(props.initialValue)
-    
-    return React.createElement("Frame", {
-        Size = UDim2.fromOffset(300, 150)
-    },
-        React.createElement("TextLabel", {
-            Text = tostring(counter.count)
-        }),
-        -- buttons...
-    )
-end
+interface UseCounterResult {
+  count: number
+  increment: () => void
+  decrement: () => void
+  reset: () => void
+}
+
+export function useCounter(initialValue = 0): UseCounterResult {
+  const [count, setCount] = useState(initialValue)
+
+  return {
+    count,
+    increment: () => setCount(count + 1),
+    decrement: () => setCount(count - 1),
+    reset: () => setCount(initialValue),
+  }
+}
 ```
 
-### With Limit
+**Usage with custom hook:**
 
-```lua
-local function Counter(props: { min: number, max: number })
-    local count, setCount = React.useState(0)
-    
-    local canIncrement = count < props.max
-    local canDecrement = count > props.min
-    
-    return React.createElement("Frame", {
-        Size = UDim2.fromOffset(300, 150)
-    },
-        React.createElement("TextLabel", {
-            Text = tostring(count)
-        }),
-        React.createElement("TextButton", {
-            Text = "-",
-            [React.Event.Activated] = if canDecrement then function()
-                setCount(count - 1)
-            end else nil
-        }),
-        React.createElement("TextButton", {
-            Text = "+",
-            [React.Event.Activated] = if canIncrement then function()
-                setCount(count + 1)
-            end else nil
-        })
-    )
-end
+```typescript
+// src/components/counter-with-hook/counter-with-hook.tsx
+import React from "@rbxts/react"
+import { useCounter } from "@/hooks/use-counter"
+
+interface CounterWithHookProps {
+  initialValue?: number
+}
+
+const CounterWithHook: React.FC<CounterWithHookProps> = ({ initialValue = 0 }) => {
+  const { count, increment, decrement, reset } = useCounter(initialValue)
+
+  return (
+    <frame Size={new UDim2(0, 300, 0, 150)}>
+      <textlabel Text={`Count: ${count}`} />
+      <textbutton
+        Text="-"
+        Event={{ Activated: decrement }}
+      />
+      <textbutton
+        Text="Reset"
+        Event={{ Activated: reset }}
+      />
+      <textbutton
+        Text="+"
+        Event={{ Activated: increment }}
+      />
+    </frame>
+  )
+}
+
+export default CounterWithHook
+```
+
+## Counter with Limits
+
+Add min/max constraints:
+
+```typescript
+// src/components/limited-counter/limited-counter.tsx
+import React, { useState } from "@rbxts/react"
+
+interface LimitedCounterProps {
+  initialValue?: number
+  min?: number
+  max?: number
+}
+
+const LimitedCounter: React.FC<LimitedCounterProps> = ({
+  initialValue = 0,
+  min = -10,
+  max = 10,
+}) => {
+  const [count, setCount] = useState(initialValue)
+
+  const canIncrement = count < max
+  const canDecrement = count > min
+
+  return (
+    <frame Size={new UDim2(0, 300, 0, 100)}>
+      <textlabel
+        Text={`Count: ${count} (${min} to ${max})`}
+        Size={new UDim2(1, 0, 0.4, 0)}
+      />
+      <frame
+        Size={new UDim2(1, 0, 0.6, 0)}
+        Position={new UDim2(0, 0, 0.4, 0)}
+      >
+        <uilistlayout Orientation={Enum.UIListLayout.FillDirection.Horizontal} />
+        <textbutton
+          Text="-"
+          Event={{
+            Activated: canDecrement ? () => setCount(count - 1) : undefined,
+          }}
+          BackgroundColor3={canDecrement ? Color3.fromRGB(200, 50, 50) : Color3.fromRGB(150, 150, 150)}
+        />
+        <textbutton
+          Text="Reset"
+          Event={{
+            Activated: () => setCount(initialValue),
+          }}
+        />
+        <textbutton
+          Text="+"
+          Event={{
+            Activated: canIncrement ? () => setCount(count + 1) : undefined,
+          }}
+          BackgroundColor3={canIncrement ? Color3.fromRGB(50, 200, 50) : Color3.fromRGB(150, 150, 150)}
+        />
+      </frame>
+    </frame>
+  )
+}
+
+export default LimitedCounter
+```
+
+## Counter with Step Size
+
+Allow configurable increment/decrement step:
+
+```typescript
+// src/components/configurable-counter/configurable-counter.tsx
+import React, { useState } from "@rbxts/react"
+
+interface ConfigurableCounterProps {
+  initialValue?: number
+  step?: number
+}
+
+const ConfigurableCounter: React.FC<ConfigurableCounterProps> = ({
+  initialValue = 0,
+  step = 1,
+}) => {
+  const [count, setCount] = useState(initialValue)
+
+  return (
+    <frame>
+      <textlabel Text={`Count: ${count} (Step: ${step})`} />
+      <textbutton
+        Text={`- ${step}`}
+        Event={{
+          Activated: () => setCount(count - step),
+        }}
+      />
+      <textbutton
+        Text="Reset"
+        Event={{
+          Activated: () => setCount(initialValue),
+        }}
+      />
+      <textbutton
+        Text={`+ ${step}`}
+        Event={{
+          Activated: () => setCount(count + step),
+        }}
+      />
+    </frame>
+  )
+}
+
+export default ConfigurableCounter
 ```
 
 ---

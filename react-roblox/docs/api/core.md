@@ -1,315 +1,552 @@
 # Core React API
 
-Core API for creating and managing React elements in Roblox.
+Core API for creating and managing React components in Roblox TypeScript using JSX syntax.
 
-## React.createElement
+## JSX Syntax (Recommended)
 
-Creates a new React element.
+The recommended way to write React components in roblox-ts is using JSX syntax. JSX transpiles to function calls under the hood:
 
-```lua
-React.createElement(type, props, ...children)
+```typescript
+// JSX syntax
+const MyFrame: React.FC = () => {
+  return <frame Size={new UDim2(1, 0, 1, 0)} />
+}
+
+// Equivalent to:
+const MyFrameVerbose: React.FC = () => {
+  return React.createElement("frame", { Size: new UDim2(1, 0, 1, 0) })
+}
 ```
 
-### Parameters
-- `type` (string | function | class): The component type
-  - String: Roblox instance (e.g., "Frame", "TextLabel")
-  - Function: Functional component
-  - Class: React.Component subclass
-- `props` (table | nil): Properties and event handlers
-- `...children` (variable): Child elements
+**Use JSX for readability** - it's cleaner and more intuitive.
 
-### Returns
-A React element representing the component
+## JSX Elements and Children
 
-### Examples
+Create elements with Roblox instances as JSX tags:
 
-**Basic element:**
-```lua
-local frame = React.createElement("Frame", {
-    Size = UDim2.fromScale(1, 1),
-    BackgroundColor3 = Color3.new(1, 1, 1)
-})
-```
+```typescript
+// Basic element
+const SimpleFrame: React.FC = () => {
+  return <frame Size={new UDim2(1, 0, 1, 0)} BackgroundColor3={new Color3(1, 1, 1)} />
+}
 
-**With children:**
-```lua
-local container = React.createElement("Frame", {
-    Size = UDim2.fromScale(1, 1)
-}, 
-    React.createElement("TextLabel", { Text = "Child 1" }),
-    React.createElement("TextLabel", { Text = "Child 2" })
+// With children
+const FrameWithChildren: React.FC = () => {
+  return (
+    <frame Size={new UDim2(1, 0, 1, 0)}>
+      <textlabel Text="Child 1" />
+      <textlabel Text="Child 2" />
+    </frame>
+  )
+}
+
+// With component children
+interface CardProps {
+  title: string
+  children?: React.ReactNode
+}
+
+const Card: React.FC<CardProps> = ({ title, children }) => {
+  return (
+    <frame>
+      <textlabel Text={title} />
+      {children}
+    </frame>
+  )
+}
+
+// Usage
+const App: React.FC = () => (
+  <Card title="My Card">
+    <textlabel Text="Card content" />
+  </Card>
 )
 ```
 
-**With functional component:**
-```lua
-local function MyButton(props)
-    return React.createElement("TextButton", {
-        Text = props.label,
-        Size = UDim2.fromOffset(100, 50)
-    })
-end
+## Functional Components
 
-local button = React.createElement(MyButton, { label = "Click me" })
+The modern standard for React components in TypeScript:
+
+```typescript
+// Simple functional component
+const HelloWorld: React.FC = () => {
+  return <textlabel Text="Hello, World!" />
+}
+
+// With typed props
+interface GreetingProps {
+  name: string
+  age?: number
+}
+
+const Greeting: React.FC<GreetingProps> = ({ name, age }) => {
+  return (
+    <frame>
+      <textlabel Text={`Hello, ${name}`} />
+      {age && <textlabel Text={`Age: ${age}`} />}
+    </frame>
+  )
+}
+
+// With default props
+interface ButtonProps {
+  label: string
+  onClick?: () => void
+  size?: UDim2
+}
+
+const Button: React.FC<ButtonProps> = ({
+  label,
+  onClick,
+  size = new UDim2(0, 100, 0, 50),
+}) => {
+  return (
+    <textbutton
+      Text={label}
+      Size={size}
+      Event={{ Activated: onClick }}
+    />
+  )
+}
 ```
 
-## React.Component
+## Memoization
 
-Base class for class components. Use `:extend()` to create subclasses.
+Use `React.memo` to prevent unnecessary re-renders when props haven't changed:
 
-```lua
-local MyComponent = React.Component:extend("MyComponent")
+```typescript
+interface ExpensiveComponentProps {
+  data: unknown
+  isLoading?: boolean
+}
 
-function MyComponent:init()
-    self:setState({ count = 0 })
-end
+const ExpensiveComponent = React.memo<ExpensiveComponentProps>(({ data, isLoading }) => {
+  // This component only re-renders when `data` or `isLoading` changes
+  if (isLoading) {
+    return <textlabel Text="Loading..." />
+  }
+  return <textlabel Text={tostring(data)} />
+})
 
-function MyComponent:render()
-    return React.createElement("TextLabel", {
-        Text = tostring(self.state.count)
-    })
-end
+// Custom comparison for memoization
+interface ComparisonProps {
+  id: number
+  name: string
+}
 
-function MyComponent:componentDidMount()
-    -- Runs after component mounts
-end
-
-function MyComponent:componentDidUpdate(prevProps, prevState)
-    -- Runs after props or state change
-end
-
-function MyComponent:componentWillUnmount()
-    -- Runs before component unmounts
-    -- Clean up resources here
-end
-```
-
-### Lifecycle Methods
-- `init()` - Constructor (initialize state)
-- `componentDidMount()` - After first render
-- `componentDidUpdate(prevProps, prevState)` - After update
-- `componentWillUnmount()` - Before removal
-
-### Methods
-- `self:setState(table | function)` - Update state and trigger re-render
-- `self:forceUpdate()` - Force re-render without state change
-
-## React.PureComponent
-
-Like `React.Component` but with automatic shallow prop/state comparison for optimization.
-
-```lua
-local OptimizedComponent = React.PureComponent:extend("OptimizedComponent")
-
-function OptimizedComponent:render()
-    return React.createElement("TextLabel", {
-        Text = self.props.text
-    })
-end
-
--- Component only re-renders if props change
-```
-
-## React.memo
-
-Wraps a functional component to memoize it. Use only when performance optimization is needed.
-
-```lua
-local ExpensiveComponent = React.memo(function(props)
-    return React.createElement("Frame", {
-        -- Complex rendering logic
-    })
-end)
-```
-
-## React.Fragment
-
-Renders multiple elements without creating a parent element.
-
-```lua
-return React.createElement(React.Fragment, nil,
-    React.createElement("TextLabel", { Text = "Item 1" }),
-    React.createElement("TextLabel", { Text = "Item 2" })
+const CustomMemo = React.memo<ComparisonProps>(
+  ({ id, name }) => {
+    return <textlabel Text={`${id}: ${name}`} />
+  },
+  (prevProps, nextProps) => {
+    // Return true if props are equal (don't re-render)
+    return prevProps.id === nextProps.id
+  }
 )
 ```
 
-## React.createRef
+## Fragments
 
-Creates a ref to access underlying Roblox instances directly.
+Render multiple elements without creating a wrapper element:
 
-```lua
-local MyComponent = React.Component:extend("MyComponent")
+```typescript
+const Fragment: React.FC = () => {
+  return (
+    <>
+      <textlabel Text="Item 1" />
+      <textlabel Text="Item 2" />
+      <textlabel Text="Item 3" />
+    </>
+  )
+}
 
-function MyComponent:init()
-    self.textBoxRef = React.createRef()
-end
-
-function MyComponent:render()
-    return React.createElement("TextBox", {
-        ref = self.textBoxRef
-    })
-end
-
-function MyComponent:componentDidMount()
-    -- Access the TextBox instance
-    self.textBoxRef.current:CaptureFocus()
-end
+// Equivalent to:
+const FragmentVerbose: React.FC = () => {
+  return (
+    <React.Fragment>
+      <textlabel Text="Item 1" />
+      <textlabel Text="Item 2" />
+      <textlabel Text="Item 3" />
+    </React.Fragment>
+  )
+}
 ```
 
-## React.forwardRef
+## Refs and Direct Instance Access
 
-Forwards a ref from a parent component to a child component.
+Use refs to access Roblox instances directly when needed:
 
-```lua
-local FancyButton = React.forwardRef(function(props, ref)
-    return React.createElement("TextButton", {
-        ref = ref,
-        Text = props.text,
-        [React.Event.Activated] = props.onClick
-    })
-end)
+```typescript
+import React, { useRef } from "@rbxts/react"
 
--- Parent component can now get direct ref to TextButton
-local ref = React.createRef()
-React.createElement(FancyButton, {
-    ref = ref,
-    text = "Click me",
-    onClick = function() print("Clicked") end
-})
+interface TextInputProps {
+  placeholder?: string
+}
+
+const TextInput: React.FC<TextInputProps> = ({ placeholder }) => {
+  const textBoxRef = useRef<TextBox>(null)
+
+  const handleFocus = () => {
+    if (textBoxRef.current) {
+      textBoxRef.current.CaptureFocus()
+    }
+  }
+
+  return (
+    <>
+      <textbox ref={textBoxRef} PlaceholderText={placeholder} />
+      <textbutton Text="Focus" Event={{ Activated: handleFocus }} />
+    </>
+  )
+}
 ```
 
-## React.cloneElement
+**Use refs sparingly** - prefer controlled components with state when possible.
 
-Clones an element with modified props.
+## Forwarding Refs
 
-```lua
-local original = React.createElement("TextLabel", { Text = "Original" })
-local cloned = React.cloneElement(original, { Text = "Cloned" })
+Forward refs from parent to child components:
+
+```typescript
+import React, { forwardRef } from "@rbxts/react"
+
+interface FancyButtonProps {
+  text: string
+  onClick?: () => void
+}
+
+const FancyButton = forwardRef<TextButton, FancyButtonProps>(
+  ({ text, onClick }, ref) => {
+    return (
+      <textbutton
+        ref={ref}
+        Text={text}
+        Event={{ Activated: onClick }}
+      />
+    )
+  }
+)
+
+// Parent component can access the TextButton directly
+const ParentComponent: React.FC = () => {
+  const buttonRef = useRef<TextButton>(null)
+
+  return (
+    <FancyButton
+      ref={buttonRef}
+      text="Click me"
+      onClick={() => {
+        if (buttonRef.current) {
+          print("Button clicked:", buttonRef.current.Name)
+        }
+      }}
+    />
+  )
+}
 ```
 
-## React.isValidElement
+## Roblox-Specific Props
 
-Checks if a value is a valid React element.
+### Event Handlers
 
-```lua
-if React.isValidElement(props.content) then
-    return props.content
-else
-    return React.createElement("TextLabel", { Text = "Invalid content" })
-end
+Use the `Event` prop object to handle Roblox events:
+
+```typescript
+const InteractiveFrame: React.FC = () => {
+  return (
+    <frame
+      Size={new UDim2(1, 0, 1, 0)}
+      Event={{
+        MouseEnter: (rbx: Frame) => {
+          print("Mouse entered frame:", rbx.Name)
+        },
+        MouseLeave: (rbx: Frame) => {
+          print("Mouse left frame")
+        },
+      }}
+    >
+      <textbutton
+        Text="Click me"
+        Event={{
+          Activated: (rbx: TextButton) => {
+            print("Button activated")
+          },
+          MouseButton1Down: (rbx: TextButton) => {
+            print("Mouse button 1 down")
+          },
+        }}
+      />
+    </frame>
+  )
+}
 ```
 
-## React.Children
+### Change Handlers
 
-Utilities for working with the `children` prop.
+Listen to property changes with the `Change` prop:
 
-### React.Children.map
-Transforms each child element.
+```typescript
+interface SizeChangeProps {
+  onSizeChange?: (size: Vector2) => void
+}
 
-```lua
-React.Children.map(props.children, function(child, index)
-    return React.cloneElement(child, { LayoutOrder = index })
-end)
+const SizeTracker: React.FC<SizeChangeProps> = ({ onSizeChange }) => {
+  return (
+    <frame
+      Size={new UDim2(1, 0, 1, 0)}
+      Change={{
+        AbsoluteSize: (rbx: Frame) => {
+          onSizeChange?.(rbx.AbsoluteSize)
+        },
+      }}
+    />
+  )
+}
 ```
 
-### React.Children.forEach
-Iterates over children without creating new elements.
+### Tags
 
-```lua
-React.Children.forEach(props.children, function(child, index)
-    print("Child", index, child)
-end)
-```
+Apply Roblox tags to instances:
 
-### React.Children.count
-Returns the number of children.
-
-```lua
-local childCount = React.Children.count(props.children)
-```
-
-### React.Children.only
-Asserts that there is exactly one child.
-
-```lua
-local onlyChild = React.Children.only(props.children)
-```
-
-### React.Children.toArray
-Converts children to an array for manipulation.
-
-```lua
-local childArray = React.Children.toArray(props.children)
-table.sort(childArray, function(a, b) return a.props.priority > b.props.priority end)
-```
-
-## Roblox-Specific APIs
-
-### React.Event
-Connect to Roblox events within props.
-
-```lua
-React.createElement("TextButton", {
-    [React.Event.Activated] = function(rbx)
-        print("Button clicked:", rbx.Name)
-    end,
-    [React.Event.MouseEnter] = function(rbx)
-        print("Mouse entered")
-    end
-})
-```
-
-### React.Change
-Listen to property changes.
-
-```lua
-React.createElement("Frame", {
-    [React.Change.AbsoluteSize] = function(rbx)
-        print("Size changed:", rbx.AbsoluteSize)
-    end
-})
-```
-
-### React.Tag
-Tag system for Roblox instances.
-
-```lua
-React.createElement("Frame", {
-    [React.Tag] = "myTag"
-})
-```
-
-### React.None
-Represents "no value" (use instead of nil for clarity).
-
-```lua
-React.createElement("TextLabel", {
-    Text = condition and "Value" or React.None
-})
+```typescript
+const TaggedFrame: React.FC = () => {
+  return (
+    <frame
+      Tags={["interactive", "ui-element"]}
+    />
+  )
+}
 ```
 
 ## Context API
 
-### React.createContext
+### Creating Context
 
-Creates a context object for passing data through the component tree.
+```typescript
+import React, { createContext, useContext } from "@rbxts/react"
 
-```lua
-local ThemeContext = React.createContext(defaultTheme)
+interface Theme {
+  primaryColor: Color3
+  secondaryColor: Color3
+  darkMode: boolean
+}
 
--- Provider component
-React.createElement(ThemeContext.Provider, {
-    value = { darkMode = true, primaryColor = Color3.new(0, 0, 0) }
-},
-    -- Child components
+interface ThemeContextType {
+  theme: Theme
+  toggleDarkMode: () => void
+}
+
+export const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
+
+export function useTheme(): ThemeContextType {
+  const context = useContext(ThemeContext)
+  if (!context) {
+    throw new Error("useTheme must be used within ThemeProvider")
+  }
+  return context
+}
+```
+
+### Provider Component
+
+```typescript
+import React, { useState } from "@rbxts/react"
+
+interface ThemeProviderProps {
+  children?: React.ReactNode
+}
+
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+  const [darkMode, setDarkMode] = useState(false)
+
+  const theme: Theme = {
+    primaryColor: darkMode ? Color3.fromRGB(50, 50, 50) : Color3.fromRGB(0, 0, 255),
+    secondaryColor: Color3.fromRGB(200, 200, 200),
+    darkMode,
+  }
+
+  return (
+    <ThemeContext.Provider
+      value={{
+        theme,
+        toggleDarkMode: () => setDarkMode(!darkMode),
+      }}
+    >
+      {children}
+    </ThemeContext.Provider>
+  )
+}
+```
+
+### Consuming Context
+
+```typescript
+const ThemedButton: React.FC = () => {
+  const { theme } = useTheme()
+
+  return (
+    <textbutton
+      Text="Click me"
+      BackgroundColor3={theme.primaryColor}
+    />
+  )
+}
+
+// In your app
+const App: React.FC = () => (
+  <ThemeProvider>
+    <ThemedButton />
+  </ThemeProvider>
 )
+```
 
--- Consumer component
-React.createElement(ThemeContext.Consumer, nil, function(theme)
-    return React.createElement("Frame", {
-        BackgroundColor3 = theme.primaryColor
-    })
-end)
+## Conditional Rendering
+
+Render content conditionally based on state or props:
+
+```typescript
+interface MessageProps {
+  type: "success" | "error" | "info"
+  text: string
+}
+
+const Message: React.FC<MessageProps> = ({ type, text }) => {
+  // Early return pattern
+  if (type === "success") {
+    return <textlabel Text={text} TextColor3={Color3.fromRGB(0, 255, 0)} />
+  }
+
+  if (type === "error") {
+    return <textlabel Text={text} TextColor3={Color3.fromRGB(255, 0, 0)} />
+  }
+
+  return <textlabel Text={text} TextColor3={Color3.fromRGB(100, 100, 100)} />
+}
+
+// Ternary operator
+const Greeting: React.FC<{ isLoggedIn: boolean; userName?: string }> = ({
+  isLoggedIn,
+  userName,
+}) => {
+  return (
+    <textlabel Text={isLoggedIn ? `Welcome, ${userName}` : "Please log in"} />
+  )
+}
+
+// Logical AND operator
+const OptionalContent: React.FC<{ show: boolean }> = ({ show }) => {
+  return show && <textlabel Text="This is shown conditionally" />
+}
+```
+
+## List Rendering
+
+Render lists of elements with proper keys:
+
+```typescript
+interface Item {
+  id: number
+  name: string
+  price: number
+}
+
+interface ItemListProps {
+  items: Item[]
+  onSelectItem?: (id: number) => void
+}
+
+const ItemList: React.FC<ItemListProps> = ({ items, onSelectItem }) => {
+  return (
+    <scrollingframe
+      Size={new UDim2(1, 0, 1, 0)}
+      CanvasSize={new UDim2(0, 0, 0, items.size() * 40)}
+    >
+      <uilistlayout />
+      {items.map((item) => (
+        <textbutton
+          key={item.id}
+          Text={`${item.name} - $${item.price}`}
+          Size={new UDim2(1, 0, 0, 40)}
+          Event={{
+            Activated: () => onSelectItem?.(item.id),
+          }}
+        />
+      ))}
+    </scrollingframe>
+  )
+}
+```
+
+**Important:** Always use a unique, stable `key` prop (not array indices):
+
+```typescript
+// ❌ Bad - keys based on array index change when list is reordered
+items.map((item, index) => <frame key={index} />)
+
+// ✅ Good - keys are stable identifiers
+items.map((item) => <frame key={item.id} />)
+```
+
+## Children Patterns
+
+Work with the `children` prop in various ways:
+
+```typescript
+// Simple children
+interface ContainerProps {
+  children?: React.ReactNode
+}
+
+const Container: React.FC<ContainerProps> = ({ children }) => {
+  return (
+    <frame Size={new UDim2(1, 0, 1, 0)} BackgroundTransparency={0.5}>
+      {children}
+    </frame>
+  )
+}
+
+// Multiple named "slots"
+interface TabsProps {
+  tabBar?: React.ReactNode
+  content?: React.ReactNode
+}
+
+const Tabs: React.FC<TabsProps> = ({ tabBar, content }) => {
+  return (
+    <frame Size={new UDim2(1, 0, 1, 0)}>
+      <frame Size={new UDim2(1, 0, 0, 40)}>
+        {tabBar}
+      </frame>
+      <frame Position={new UDim2(0, 0, 0, 40)} Size={new UDim2(1, 0, 1, -40)}>
+        {content}
+      </frame>
+    </frame>
+  )
+}
+
+// React.Children utilities
+import React from "@rbxts/react"
+
+interface ListProps {
+  children?: React.ReactNode
+}
+
+const List: React.FC<ListProps> = ({ children }) => {
+  const childCount = React.Children.count(children)
+
+  return (
+    <frame>
+      <textlabel Text={`Number of items: ${childCount}`} />
+      <frame>
+        {React.Children.map(children, (child, index) => (
+          <frame key={index} LayoutOrder={index}>
+            {child}
+          </frame>
+        ))}
+      </frame>
+    </frame>
+  )
+}
 ```
 
 ---

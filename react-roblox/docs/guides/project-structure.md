@@ -1,324 +1,571 @@
-# Project Structure
+# Project Structure and Organization
 
-Recommended folder organization for React Roblox projects, aligned with Facebook's official React project structure recommendations.
+A comprehensive guide to organizing your React-Roblox project following modern community conventions and best practices.
 
-## Standard Folder Layout
+## Core Philosophy
+
+Your project structure should make it easy to:
+- **Find files quickly** - Organized by feature, not type
+- **Scale gracefully** - Add features without restructuring
+- **Maintain code** - Clear separation of concerns
+- **Reuse components** - Export and compose easily
+- **Test effectively** - Testable, isolated modules
+
+This guide emphasizes:
+- 📁 **kebab-case** for file and folder names
+- 🔠 **PascalCase** for component names
+- 🎯 **Feature-based** organization (when scaling)
+- 🪡 **Consistent conventions** across the project
+
+## Starter Project Structure
+
+For small to medium projects:
 
 ```
 src/
-├── components/
-│   ├── Button.tsx
-│   ├── Card.tsx
-│   ├── Form/
-│   │   ├── FormInput.tsx
-│   │   ├── FormCheckbox.tsx
-│   │   └── Form.tsx
-│   └── Layout/
-│       ├── Header.tsx
-│       ├── Sidebar.tsx
-│       ├── Footer.tsx
-│       └── Layout.tsx
-├── hooks/
-│   ├── useForm.ts
-│   ├── useTheme.ts
-│   ├── useAuth.ts
-│   └── useLocalStorage.ts
-├── context/
-│   ├── ThemeContext.tsx
-│   ├── AuthContext.tsx
-│   └── UserContext.tsx
-├── pages/
-│   ├── HomePage.tsx
-│   ├── ProfilePage.tsx
-│   └── SettingsPage.tsx
-├── utils/
+├── components/              # Reusable components
+│   ├── common/
+│   │   ├── my-button/
+│   │   │   ├── my-button.tsx
+│   │   │   ├── my-button.stories.tsx    (optional)
+│   │   │   └── index.ts
+│   │   ├── my-card/
+│   │   │   ├── my-card.tsx
+│   │   │   └── index.ts
+│   │   └── index.ts
+│   ├── layouts/
+│   │   ├── app-layout/
+│   │   │   ├── app-layout.tsx
+│   │   │   └── index.ts
+│   │   └── index.ts
+│   └── pages/
+│       ├── home-page/
+│       │   ├── home-page.tsx
+│       │   └── index.ts
+│       └── index.ts
+├── hooks/                   # Custom hooks
+│   ├── use-form-input.ts
+│   ├── use-local-storage.ts
+│   ├── use-fetch.ts
+│   └── index.ts
+├── context/                 # Context providers
+│   ├── theme-context.ts
+│   ├── user-context.ts
+│   └── index.ts
+├── utils/                   # Utility functions
 │   ├── formatting.ts
 │   ├── validation.ts
 │   └── helpers.ts
-├── types/
-│   └── models.ts
-├── constants/
+├── types/                   # Type definitions
+│   ├── component-props.ts
+│   ├── models.ts
+│   └── index.ts
+├── constants/               # Constants
 │   ├── colors.ts
-│   └── config.ts
+│   ├── config.ts
+│   └── index.ts
+├── app.tsx                  # Root component
 └── client/
-    └── init.client.tsx
+    └── init.client.tsx      # Roblox entry point
+```
+
+## File and Folder Naming Conventions
+
+### 📁 Folder Names (kebab-case)
+
+```typescript
+// ✅ Good
+src/components/my-button/
+src/hooks/use-form-input.ts
+src/context/theme-context.ts
+src/utils/formatting.ts
+
+// ❌ Bad
+src/components/MyButton/
+src/hooks/useFormInput.ts
+src/context/ThemeContext.ts
+src/utils/Formatting.ts
+```
+
+### 📄 File Names (kebab-case)
+
+```typescript
+// ✅ Good
+my-button.tsx
+use-form-input.ts
+theme-context.ts
+component-props.ts
+
+// ❌ Bad
+MyButton.tsx
+useFormInput.ts
+ThemeContext.ts
+ComponentProps.ts
+```
+
+### 🔠 Component Names (PascalCase)
+
+```typescript
+// ✅ Good - Component file content
+const MyButton: React.FC<MyButtonProps> = (props) => { ... }
+const AlertDialog: React.FC<AlertDialogProps> = (props) => { ... }
+
+// ❌ Bad
+const myButton = ...
+const alert_dialog = ...
 ```
 
 ## Directory Guide
 
 ### `components/`
 
-Reusable UI building blocks. Each component should:
-- Be focused on a single responsibility
-- Accept configuration through props
-- Be testable in isolation
-- Not contain business logic (keep that in hooks/context)
+Reusable UI components organized by category.
 
-```lua
--- components/Button.tsx
-local function Button(props)
-    return React.createElement("TextButton", {
-        Text = props.label,
-        Size = props.size or UDim2.fromOffset(100, 50),
-        BackgroundColor3 = props.color,
-        [React.Event.Activated] = props.onClick
-    })
-end
+**Sub-folders:**
+- `common/` - Shared, reusable components (Button, Card, Input, etc.)
+- `layouts/` - Page layout components (AppLayout, Sidebar, Header, etc.)
+- `pages/` - Page-level components (HomePage, ProfilePage, etc.)
 
-return Button
+**Each component folder structure:**
+
+```
+src/components/my-button/
+├── my-button.tsx           # Component implementation
+├── my-button.stories.tsx   # (optional) Storybook stories
+└── index.ts                # Export barrel
 ```
 
-**Organizing by domain:**
+**Example component:**
+
+```typescript
+// src/components/my-button/my-button.tsx
+import React from "@rbxts/react"
+
+export interface MyButtonProps {
+  text: string
+  onClick?: () => void
+  disabled?: boolean
+}
+
+const MyButton: React.FC<MyButtonProps> = ({
+  text,
+  onClick,
+  disabled = false,
+}) => {
+  return (
+    <textbutton
+      Text={text}
+      Event={{ Activated: onClick }}
+      AutoButtonColor={!disabled}
+    />
+  )
+}
+
+export default MyButton
 ```
-components/
-├── Common/              # Shared across app
-│   ├── Button.tsx
-│   ├── Input.tsx
-│   └── Card.tsx
-├── Form/               # Form-related components
-│   ├── FormInput.tsx
-│   ├── FormCheckbox.tsx
-│   └── FormButton.tsx
-└── Navigation/         # Navigation components
-    ├── NavBar.tsx
-    └── NavItem.tsx
+
+```typescript
+// src/components/my-button/index.ts
+export { default as MyButton } from "./my-button"
+export type { MyButtonProps } from "./my-button"
+```
+
+**Importing:**
+
+```typescript
+// ✅ Good - Use barrel import
+import { MyButton } from "@/components/common"
+
+// ✅ Also good - Direct import
+import { MyButton } from "@/components/my-button"
+
+// ❌ Bad - Deep import
+import MyButton from "@/components/my-button/my-button"
 ```
 
 ### `hooks/`
 
-Reusable stateful logic. Custom hooks for:
-- State management patterns
-- API interaction
-- Local storage
-- Form handling
-- Custom business logic
+Custom React hooks for reusable stateful logic.
 
-```lua
--- hooks/useForm.ts
-local function useForm(initialValues, onSubmit)
-    local values, setValues = React.useState(initialValues)
-    local errors, setErrors = React.useState({})
-    
-    return {
-        values = values,
-        errors = errors,
-        handleChange = function(name, value)
-            setValues(table.assign({}, values, { [name] = value }))
-        end,
-        handleSubmit = function()
-            onSubmit(values)
-        end
-    }
-end
+```typescript
+// src/hooks/use-form-input.ts
+import { useState } from "@rbxts/react"
 
-return useForm
+export function useFormInput(initialValue: string = "") {
+  const [value, setValue] = useState(initialValue)
+  return {
+    value,
+    onChange: (newValue: string) => setValue(newValue),
+    reset: () => setValue(initialValue),
+  }
+}
+```
+
+```typescript
+// src/hooks/use-fetch.ts
+import { useState, useEffect } from "@rbxts/react"
+
+export function useFetch<T>(url: string) {
+  const [data, setData] = useState<T | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Fetch implementation
+  }, [url])
+
+  return { data, loading, error }
+}
+```
+
+**Export barrel:**
+
+```typescript
+// src/hooks/index.ts
+export { useFormInput } from "./use-form-input"
+export { useFetch } from "./use-fetch"
+export { useLocalStorage } from "./use-local-storage"
 ```
 
 ### `context/`
 
-Global state providers. Organize by feature:
+Context providers for global state management.
 
-```lua
--- context/ThemeContext.tsx
-local ThemeContext = React.createContext({
-    darkMode = false,
-    toggleTheme = function() end
-})
+```typescript
+// src/context/theme-context.ts
+import React from "@rbxts/react"
 
-local function ThemeProvider(props)
-    local darkMode, setDarkMode = React.useState(false)
-    
-    return React.createElement(ThemeContext.Provider, {
-        value = {
-            darkMode = darkMode,
-            toggleTheme = function()
-                setDarkMode(not darkMode)
-            end
-        }
-    }, props.children)
-end
-
-return {
-    Provider = ThemeProvider,
-    Context = ThemeContext
+export interface Theme {
+  primaryColor: Color3
+  darkMode: boolean
 }
+
+export const ThemeContext = React.createContext<Theme>({
+  primaryColor: Color3.fromRGB(0, 0, 255),
+  darkMode: false,
+})
 ```
 
-### `pages/`
+```typescript
+// src/components/theme-provider/theme-provider.tsx
+import React, { useState } from "@rbxts/react"
+import { ThemeContext, Theme } from "@/context/theme-context"
 
-Top-level page components that:
-- Combine multiple components
-- Manage page-level state
-- Integrate context providers
-- Handle page-specific logic
+interface ThemeProviderProps {
+  children?: React.ReactNode
+}
 
-```lua
--- pages/HomePage.tsx
-local function HomePage(props)
-    local data, setData = React.useState(nil)
-    
-    React.useEffect(function()
-        -- Load page data
-    end, {})
-    
-    return React.createElement("Frame", {
-        Size = UDim2.fromScale(1, 1)
-    },
-        React.createElement(Header, {}),
-        React.createElement("Frame", {}, 
-            -- Page content
-        ),
-        React.createElement(Footer, {})
-    )
-end
+const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+  const [darkMode, setDarkMode] = useState(false)
 
-return HomePage
+  const theme: Theme = {
+    primaryColor: darkMode ? Color3.fromRGB(50, 50, 50) : Color3.fromRGB(255, 255, 255),
+    darkMode,
+  }
+
+  return (
+    <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
+  )
+}
+
+export default ThemeProvider
 ```
 
 ### `utils/`
 
-Utility functions for:
-- String formatting
-- Validation
-- Math operations
-- Data transformation
-- Helpers
+Pure utility functions and helpers.
 
-```lua
--- utils/formatting.ts
-local function formatCurrency(amount)
-    return "$" .. string.format("%.2f", amount)
-end
+```typescript
+// src/utils/formatting.ts
+export function formatCurrency(value: number): string {
+  return `$${value.toFixed(2)}`
+}
 
-local function formatDate(date)
-    return os.date("%Y-%m-%d", date)
-end
-
-return {
-    formatCurrency = formatCurrency,
-    formatDate = formatDate
+export function truncateString(str: string, length: number): string {
+  return str.length > length ? str.substring(0, length) + "..." : str
 }
 ```
 
 ### `types/`
 
-TypeScript/Luau type definitions:
+TypeScript type definitions and interfaces.
 
-```lua
--- types/models.ts
-type User = {
-    id: number,
-    name: string,
-    email: string,
-    createdAt: number
+```typescript
+// src/types/models.ts
+export interface User {
+  id: number
+  name: string
+  email: string
 }
 
-type Post = {
-    id: number,
-    title: string,
-    content: string,
-    author: User,
-    publishedAt: number
+export interface Post {
+  id: number
+  title: string
+  content: string
+  authorId: number
 }
-
-return {}
 ```
 
 ### `constants/`
 
-Application constants:
+Application constants.
 
-```lua
--- constants/colors.ts
-return {
-    PRIMARY = Color3.fromRGB(59, 89, 152),
-    SECONDARY = Color3.fromRGB(243, 114, 69),
-    SUCCESS = Color3.fromRGB(46, 204, 113),
-    ERROR = Color3.fromRGB(231, 76, 60),
-    WARNING = Color3.fromRGB(241, 196, 15),
-    NEUTRAL = Color3.fromRGB(127, 140, 141)
+```typescript
+// src/constants/colors.ts
+export const COLORS = {
+  primary: Color3.fromRGB(0, 0, 255),
+  secondary: Color3.fromRGB(200, 200, 200),
+  danger: Color3.fromRGB(255, 0, 0),
+  success: Color3.fromRGB(0, 255, 0),
+} as const
+```
+
+## Scaling to Feature-Based Structure
+
+As your project grows, reorganize by feature:
+
+```
+src/
+├── features/
+│   ├── auth/                    # Authentication feature
+│   │   ├── components/
+│   │   │   ├── login-form/
+│   │   │   └── sign-up-form/
+│   │   ├── hooks/
+│   │   │   ├── use-login.ts
+│   │   │   └── use-auth.ts
+│   │   ├── context/
+│   │   │   └── auth-context.ts
+│   │   ├── types/
+│   │   │   └── auth.ts
+│   │   └── index.ts
+│   ├── dashboard/               # Dashboard feature
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   └── index.ts
+│   └── settings/                # Settings feature
+│       ├── components/
+│       ├── hooks/
+│       └── index.ts
+├── shared/                      # Shared across features
+│   ├── components/
+│   ├── hooks/
+│   ├── utils/
+│   └── types/
+└── app.tsx
+```
+
+## Best Practices
+
+### 1. Barrel Exports
+
+Create `index.ts` files to simplify imports:
+
+```typescript
+// src/components/index.ts
+export { MyButton } from "./common/my-button"
+export { MyCard } from "./common/my-card"
+export { AppLayout } from "./layouts/app-layout"
+
+// Usage
+import { MyButton, MyCard } from "@/components"
+```
+
+### 2. Component Organization
+
+Keep related files together:
+
+```
+my-component/
+├── my-component.tsx         # Component
+├── my-component.test.ts     # Tests (if using)
+├── my-component.styles.ts   # Styles (if needed)
+├── my-component.stories.tsx # Storybook (if using)
+└── index.ts                 # Export
+```
+
+### 3. Type Safety
+
+Define interfaces near where they're used:
+
+```typescript
+// src/components/user-card/user-card.tsx
+interface UserCardProps {
+  userId: number
+  onSelect: (id: number) => void
+}
+
+const UserCard: React.FC<UserCardProps> = ({ userId, onSelect }) => {
+  // ...
 }
 ```
 
-### `client/`
+For shared types, use `src/types/`:
 
-Application entry point:
-
-```lua
--- client/init.client.tsx
-import React from "@react-lua/react"
-import ReactRoblox from "@react-lua/react-roblox"
-import App from "../pages/App"
-
-local root = ReactRoblox.createRoot(game.Players.LocalPlayer:WaitForChild("PlayerGui"))
-root:render(React.createElement(App))
+```typescript
+// src/types/models.ts
+export interface User {
+  id: number
+  name: string
+}
 ```
+
+### 4. Import Paths
+
+Use path aliases for cleaner imports:
+
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  }
+}
+```
+
+```typescript
+// ✅ Good - Clean imports with alias
+import { MyButton } from "@/components/common"
+import { useForm } from "@/hooks"
+import { User } from "@/types/models"
+
+// ❌ Bad - Relative paths
+import { MyButton } from "../../../components/common"
+import { useForm } from "../../hooks"
+import { User } from "../../types/models"
+```
+
+### 5. Avoid Deep Nesting
+
+Maximum nesting depth: 3 levels
+
+```
+src/
+├── components/          # 1
+│   └── common/          # 2
+│       └── my-button/   # 3
+│           └── src      # DON'T GO DEEPER
+
+❌ src/features/auth/components/forms/login/form/input.tsx
+✅ src/features/auth/components/login-form/login-form.tsx
+```
+
+### 6. Module Organization
+
+Organize modules by responsibility:
+
+```
+src/
+├── components/     # UI components only
+├── hooks/          # Custom hooks only
+├── context/        # Context definitions only
+├── utils/          # Pure functions only
+├── types/          # Interfaces only
+├── constants/      # Constants only
+└── client/         # Roblox entry point only
+```
+
+## Responsive Design with ui-scaler
+
+Always use `usePx` from `@rbxts/ui-scaler`:
+
+```typescript
+// src/components/responsive-frame/responsive-frame.tsx
+import React from "@rbxts/react"
+import { usePx } from "@rbxts/ui-scaler"
+
+const ResponsiveFrame: React.FC = () => {
+  const px = usePx()
+
+  return (
+    <frame
+      Size={new UDim2(
+        0,
+        px(300),  // ✅ Good - responsive width
+        0,
+        px(200)   // ✅ Good - responsive height
+      )}
+    />
+  )
+}
+
+export default ResponsiveFrame
+```
+
+See [UI Scaler Guide](./ui-scaler.md) for more details.
 
 ## Real-World Examples
 
-### Slither Project Structure
-- **src/client** - Client entry points
-- **src/server** - Server logic
-- **src/shared** - Shared utilities and components
-- Demonstrates multi-environment React usage
+### Small Project (Starter)
+Suitable for: Learning, small games, simple UIs
 
-### UI-Labs Project Structure
-- **src/UI** - Component library
-- **src/Hooks** - Custom hooks
-- **src/Context** - Context providers
-- **src/Stories** - Component showcase
-- **src/Themes** - Theme management
-- Shows component library best practices
+Follow the **Starter Project Structure** above. All components in one folder.
 
-## Naming Conventions
+### Medium Project (Feature-Based)
+Suitable for: Multiple features, growing team, reusable components
 
-### Components
-- PascalCase: `Button.tsx`, `UserCard.tsx`
-- Descriptive names: `UserProfileCard` not `Card2`
+Switch to feature-based structure when:
+- You have 20+ components
+- Features are independent
+- Multiple developers
 
-### Hooks
-- Start with "use": `useForm.ts`, `useAuth.ts`
-- Describe what they do: `useLocalStorage` not `useStorage`
+### Large Project (Modular)
+Suitable for: Multiple teams, complex applications
 
-### Utilities
-- camelCase: `formatting.ts`, `validation.ts`
-- Clear purpose: `stringFormatting` not `utils`
+Each feature is a module with:
+- Own components, hooks, types, utils
+- Internal organization
+- Clear public API (index.ts)
 
-### Context
-- Name after domain: `ThemeContext.tsx`, `AuthContext.tsx`
-- Provider component: `ThemeProvider`, `AuthProvider`
+## Common Patterns
 
-## File Organization Tips
+### Component with Subcomponents
 
-1. **One component per file** - Easy to find and maintain
-2. **Index exports** - Optional, but helps with clean imports
-3. **Group related files** - Put Form components in Form/ folder
-4. **Separate concerns** - Keep components, hooks, and utils separate
-5. **Share across pages** - Components go in components/, page-specific logic in pages/
-
-### Example Index File
-
-```lua
--- components/Form/index.tsx
-export { default as Form } from "./Form"
-export { default as FormInput } from "./FormInput"
-export { default as FormCheckbox } from "./FormCheckbox"
+```
+my-dialog/
+├── my-dialog.tsx           # Main component
+├── my-dialog-header.tsx    # Subcomponent
+├── my-dialog-footer.tsx    # Subcomponent
+└── index.ts
 ```
 
-Then import cleanly:
-```lua
-import { Form, FormInput } from "components/Form"
+```typescript
+// src/components/my-dialog/index.ts
+export { MyDialog } from "./my-dialog"
+export { MyDialogHeader } from "./my-dialog-header"
+export { MyDialogFooter } from "./my-dialog-footer"
 ```
 
-## Growing Your Project
+### Shared Types Between Modules
 
-As your project grows:
+```
+src/types/
+├── shared.ts       # Types used across features
+├── auth.ts         # Auth-specific types
+└── models.ts       # Data models
+```
 
-1. **Extract features** - Separate admin, settings, etc. into feature folders
-2. **Create shared libraries** - Move reusable components to packages
-3. **Split stores** - Organize context by feature
-4. **Lazy load** - Use React.lazy for code splitting (advanced)
+### Private vs Public
+
+```
+feature/
+├── components/
+│   ├── _internal-component/  # Private (underscore prefix)
+│   └── public-component/     # Public
+└── index.ts                  # Export only public
+```
+
+## Migration Path
+
+Starting with the Starter structure:
+
+1. **Month 1-2**: Use flat structure, everything in folders
+2. **Month 2-3**: Extract common hooks, create context providers
+3. **Month 3+**: Move to feature-based when you have 3+ independent features
 
 ---
 
-**See also**: [Getting Started](./getting-started.md), [Component Patterns](./components.md)
+**See also**: [File Naming](./file-naming.md), [Component Organization](./component-organization.md), [UI Scaler](./ui-scaler.md)

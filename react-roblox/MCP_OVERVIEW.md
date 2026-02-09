@@ -2,7 +2,7 @@
 
 ## What is This?
 
-This is a **Model Context Protocol (MCP)** documentation collection for **React-Lua** development in Roblox. It provides comprehensive, organized information about building UIs with React on the Roblox platform.
+This is a **Model Context Protocol (MCP)** documentation collection for **React development in Roblox using TypeScript**. It provides comprehensive, organized information about building modern UIs with React and roblox-typescript.
 
 ## Contents
 
@@ -10,87 +10,98 @@ This is a **Model Context Protocol (MCP)** documentation collection for **React-
 
 ```
 react-roblox/
-├── README.md                           # Overview and structure
+├── README.md                           # Overview and quick start
 ├── docs/
-│   ├── INDEX.md                       # Quick navigation guide
+│   ├── INDEX.md                        # Quick navigation guide
 │   │
-│   ├── api/                           # Complete API Reference
-│   │   ├── core.md                   # Core API (elements, components)
-│   │   ├── hooks.md                  # Hooks API (useState, useEffect, etc.)
-│   │   ├── context.md                # Context API (global state)
-│   │   └── advanced.md               # Advanced features
+│   ├── api/                            # Complete API Reference
+│   │   ├── core.md                    # Core API (elements, components)
+│   │   ├── hooks.md                   # Hooks API (useState, useEffect, etc.)
+│   │   ├── context.md                 # Context API (global state)
+│   │   └── advanced.md                # Advanced features (refs, lazy, etc.)
 │   │
-│   ├── guides/                        # Practical Guides
-│   │   ├── getting-started.md        # First React component
-│   │   ├── components.md             # Component patterns & best practices
-│   │   └── project-structure.md      # Organizing your code
+│   ├── guides/                         # Practical Guides
+│   │   ├── getting-started.md         # Your first React component
+│   │   ├── components.md              # Component patterns & conventions
+│   │   ├── project-structure.md       # Organizing your codebase
+│   │   ├── file-naming.md             # File naming conventions
+│   │   ├── component-organization.md  # Component structure patterns
+│   │   └── ui-scaler.md               # Responsive design with usePx
 │   │
-│   └── examples/                      # Real-World Examples
-│       ├── counter.md                # Simple counter component
-│       ├── form.md                   # Form with validation
-│       ├── project-slither.md        # Game UI reference
-│       └── project-ui-labs.md        # Component library reference
-│
-└── src/                               # Future code examples
+│   └── examples/                       # Real-World Examples
+│       ├── counter.md                 # Simple counter component
+│       ├── form.md                    # Form with validation
+│       ├── project-slither.md         # Production game UI reference
+│       └── project-ui-labs.md         # Component library reference
+└── docs/INDEX.md                       # Navigation and search guide
 ```
 
 ## Key Features
 
-✅ **Complete API Coverage** - All React-Lua APIs documented with examples  
-✅ **React Best Practices** - Aligned with Facebook's official React recommendations  
-✅ **Practical Examples** - Real code examples for common tasks  
-✅ **Real-World Projects** - References to production Roblox projects using React  
-✅ **Beginner to Advanced** - Content for all experience levels  
-✅ **Official React Patterns** - Based on React 17.0.1 specifications  
+✅ **TypeScript First** - All examples use roblox-typescript  
+✅ **Community Best Practices** - Patterns from modern Roblox projects  
+✅ **Clear Conventions** - PascalCase components, kebab-case files  
+✅ **Modern Packages** - ui-scaler, topbar-components, ripple, ultimate-list  
+✅ **Practical Examples** - Real code ready to adapt  
+✅ **Real-World References** - Slither, UI-Labs, and more  
+✅ **Responsive Design** - usePx from @rbxts/ui-scaler  
 
 ## Documentation Structure
 
 ### For Beginners
 1. Start with **[Getting Started Guide](./docs/guides/getting-started.md)**
 2. Learn **[Core API](./docs/api/core.md)** concepts
-3. Study **[Component Patterns](./docs/guides/components.md)**
+3. Understand **[Component Patterns](./docs/guides/components.md)**
 4. Review **[Project Structure](./docs/guides/project-structure.md)**
 
 ### For Intermediate Users
-1. Deep dive into **[Hooks](./docs/api/hooks.md)**
-2. Master **[Context API](./docs/api/context.md)**
-3. Study **[Component Patterns](./docs/guides/components.md)** in detail
+1. Master **[Hooks](./docs/api/hooks.md)**
+2. Learn **[Context API](./docs/api/context.md)**
+3. Study **[Responsive Design](./docs/guides/ui-scaler.md)**
 4. Review **[Real-World Examples](./docs/examples/)**
 
 ### For Advanced Users
 1. Explore **[Advanced Features](./docs/api/advanced.md)**
-2. Study **[Real Project References](./docs/examples/project-slither.md)** for patterns
-3. Deep dive into **[Component Library Design](./docs/examples/project-ui-labs.md)**
-4. Implement custom patterns and optimizations
+2. Study **[Project References](./docs/examples/)**
+3. Design **[Component Systems](./docs/guides/component-organization.md)**
+4. Build scalable architectures
 
 ## What's Covered
 
 ### React APIs
-- ✅ Component creation (createElement)
-- ✅ Functional and class components
+- ✅ Component creation (JSX and createElement)
+- ✅ Functional components with TypeScript
 - ✅ Hooks (useState, useEffect, useContext, useReducer, etc.)
-- ✅ Context API
+- ✅ Context API for global state
 - ✅ Refs and forwardRef
-- ✅ Component composition
-- ✅ Roblox-specific APIs (Event, Change, Tag, None)
+- ✅ Component composition patterns
+- ✅ Roblox-specific event handling
 
 ### Patterns & Best Practices
 - ✅ Component composition
 - ✅ Higher-order components
-- ✅ Render props
+- ✅ Render props pattern
 - ✅ Custom hooks
 - ✅ Container/presentational pattern
 - ✅ Context providers
 - ✅ Compound components
 - ✅ Form handling
-- ✅ List rendering
+- ✅ List rendering with ultimate-list
 
 ### Project Organization
-- ✅ Folder structure (per Facebook recommendations)
-- ✅ File naming conventions
+- ✅ Folder structure conventions
+- ✅ File naming (kebab-case)
+- ✅ Component naming (PascalCase)
 - ✅ Scaling strategies
 - ✅ Component libraries
-- ✅ Shared utilities
+- ✅ Shared utilities and hooks
+
+### Modern Packages
+- ✅ @rbxts/ui-scaler - Responsive design
+- ✅ @rbxts/topbar-components - UI patterns
+- ✅ @rbxts/ripple - Component libraries
+- ✅ @rbxts/ultimate-list - List virtualization
+- ✅ Pretty React Hooks - Custom hook patterns
 
 ### Real-World Examples
 - ✅ Game UIs (Slither)
@@ -99,10 +110,11 @@ react-roblox/
 
 ## What's NOT Covered
 
-❌ Other dependencies (Reflex, Redux, etc.) - only React usage  
-❌ Non-React Roblox APIs (use official Roblox docs)  
+❌ Luau/Lua syntax - TypeScript only  
+❌ Other state libraries - React only  
+❌ Non-React Roblox APIs - use official Roblox docs  
 ❌ UI frameworks beyond React  
-❌ Backend/server-side logic (except where React integrates with it)  
+❌ Backend/server logic  
 ❌ Testing frameworks  
 
 ## Quick Links
@@ -110,99 +122,127 @@ react-roblox/
 | Need | Go To |
 |------|-------|
 | First component | [Getting Started](./docs/guides/getting-started.md) |
-| API lookup | [Core API](./docs/api/core.md), [Hooks](./docs/api/hooks.md) |
+| API reference | [Core API](./docs/api/core.md), [Hooks](./docs/api/hooks.md) |
 | Component patterns | [Component Patterns](./docs/guides/components.md) |
 | Project structure | [Project Structure](./docs/guides/project-structure.md) |
-| Examples | [Examples](./docs/examples/) |
+| File/component naming | [File Naming](./docs/guides/file-naming.md) |
+| Responsive design | [UI Scaler Guide](./docs/guides/ui-scaler.md) |
 | Real-world reference | [Slither](./docs/examples/project-slither.md), [UI-Labs](./docs/examples/project-ui-labs.md) |
 | Quick reference | [INDEX](./docs/INDEX.md) |
 
-## How to Use This MCP
+## Naming Conventions
 
-This documentation is designed to be used with an AI assistant or as a reference guide:
+### Components (PascalCase)
+```typescript
+const MyButton: React.FC<Props> = () => { ... }
+const AlertDialog: React.FC<Props> = () => { ... }
+```
 
-1. **Search by topic** - Use keywords to find relevant documentation
-2. **Navigate with INDEX** - Use the INDEX.md for quick navigation
-3. **Follow links** - Cross-references connect related topics
-4. **Copy examples** - Code examples are ready to adapt
-5. **Check references** - See how real projects implement patterns
+### Files & Folders (kebab-case)
+```
+src/components/my-button/my-button.tsx
+src/hooks/use-form.ts
+src/utils/formatting.ts
+```
 
-## Standards & References
+### UI Sizing (usePx)
+```typescript
+import { usePx } from "@rbxts/ui-scaler"
 
-### Alignment
-- **React 17.0.1** - React specifications
-- **Facebook's Project Structure** - Official React recommendations
-- **TypeScript/roblox-ts** - Modern Roblox development
-- **Luau Language** - Roblox's Lua variant
+const MyComponent: React.FC = () => {
+  const px = usePx()
+  return <frame Size={new UDim2(0, px(200), 0, px(50))} />
+}
+```
 
-### Source Material
-- React-Lua: https://react.luau.page/
-- React JS: https://reactjs.org/docs
+## Community References
+
+This documentation incorporates patterns from:
+
+1. **@rbxts/topbar-components**
+   - Component export patterns
+   - Composable UI components
+
+2. **littensy/pretty-react-hooks**
+   - Custom hook patterns
+   - Reusable hook utilities
+
+3. **@rbxts/ripple**
+   - UI component library structure
+   - Component composition
+
+4. **PepeElToro41/ui-labs**
+   - Design system approach
+   - Theme management
+   - Component organization
+
+5. **@rbxts/ultimate-list**
+   - List rendering patterns
+   - Virtualization techniques
+
+6. **@rbxts/ui-scaler**
+   - Responsive design
+   - usePx hook usage
+
+7. **littensy/slither**
+   - Production game UI
+   - Complex state management
+
+## Standards & Alignment
+
+### Languages
+- **roblox-typescript** - Type-safe development
+- **React 17.0+** - Core React patterns
+- **TypeScript** - Strong typing throughout
+
+### References
+- React JS: https://reactjs.org/docs (concepts apply)
 - Roblox API: https://create.roblox.com/docs
-
-## Project References Used
-
-1. **Slither** (littensy)
-   - GitHub: https://github.com/littensy/slither
-   - Focus: Game UI with React
-
-2. **UI-Labs** (PepeElToro41)
-   - GitHub: https://github.com/PepeElToro41/ui-labs
-   - Focus: Component library & design system
+- React-Lua: https://react.luau.page/
 
 ## Document Statistics
 
-- **Total Pages**: 13 Markdown files
+- **Total Pages**: 14+ Markdown files
 - **API Documentation**: 4 files covering all major React APIs
-- **Guides**: 3 beginner-to-advanced guides
+- **Guides**: 6 beginner-to-advanced guides
 - **Examples**: 4 practical examples and project references
-- **Total Content**: ~50,000+ words
-- **Code Examples**: 100+ inline examples
+- **Code Examples**: 100+ TypeScript examples
+- **Focus**: React patterns only
 
-## Maintenance
+## How to Use This MCP
 
-This MCP documentation:
-- ✅ Focuses exclusively on React usage
-- ✅ Excludes unrelated dependencies
-- ✅ Follows official React patterns
-- ✅ Provides practical, tested examples
-- ✅ Maintains clear organization
+This documentation is designed for AI assistants and developers:
 
-## Getting Help
-
-### If you need to...
-
-**Learn a specific API**  
-→ Check [INDEX](./docs/INDEX.md) > find API > read documentation
-
-**Build a specific component**  
-→ Check [Examples](./docs/examples/) > find similar example > adapt
-
-**Understand a pattern**  
-→ Check [Component Patterns](./docs/guides/components.md) > find pattern > study
-
-**Organize your project**  
-→ Read [Project Structure](./docs/guides/project-structure.md)
-
-**See real-world code**  
-→ Check [Slither](./docs/examples/project-slither.md) or [UI-Labs](./docs/examples/project-ui-labs.md)
+1. **Search by topic** - Find relevant documentation by keywords
+2. **Navigate with INDEX** - Use INDEX.md for quick lookups
+3. **Follow examples** - Copy and adapt TypeScript examples
+4. **Reference projects** - Study real-world implementations
+5. **Check conventions** - Ensure your code follows standards
 
 ## Next Steps
 
-1. **Choose your path**:
-   - Beginner: Start with [Getting Started](./docs/guides/getting-started.md)
-   - Intermediate: Jump to [Hooks](./docs/api/hooks.md)
-   - Advanced: Review [Advanced Features](./docs/api/advanced.md)
+1. **Choose your level**:
+   - Beginner: [Getting Started](./docs/guides/getting-started.md)
+   - Intermediate: [Hooks](./docs/api/hooks.md)
+   - Advanced: [Advanced Features](./docs/api/advanced.md)
 
-2. **Read the relevant sections** for your use case
+2. **Learn the conventions**:
+   - [Project Structure](./docs/guides/project-structure.md)
+   - [File Naming](./docs/guides/file-naming.md)
+   - [UI Scaler](./docs/guides/ui-scaler.md)
 
-3. **Reference examples** as you code
+3. **Build with examples**:
+   - Study [Examples](./docs/examples/)
+   - Reference [Real Projects](./docs/examples/project-slither.md)
 
-4. **Bookmark INDEX** for quick lookups
+4. **Use as reference**:
+   - Bookmark [INDEX](./docs/INDEX.md)
+   - Return to [API docs](./docs/api/) as needed
 
 ---
 
-**MCP created**: 2026  
-**Focus**: React-Lua API and patterns  
-**Scope**: React usage only  
-**Based on**: React 17.0.1, official React recommendations
+**MCP Version**: 2.0 (TypeScript Edition)  
+**Focus**: React patterns with roblox-typescript  
+**Updated**: 2026  
+**Language**: TypeScript only  
+**Scope**: React usage and best practices

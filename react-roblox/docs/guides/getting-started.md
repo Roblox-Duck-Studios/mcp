@@ -1,224 +1,355 @@
-# Getting Started with React in Roblox
+# Getting Started with React in Roblox TypeScript
 
-This guide walks you through the fundamentals of React-Lua on Roblox.
+This guide walks you through building your first React component with **roblox-typescript**. All examples use modern TypeScript and JSX syntax.
 
 ## Prerequisites
 
-- TypeScript/Luau knowledge
-- Basic understanding of React concepts
-- Roblox development environment set up
-- Package manager (npm/pnpm)
+- TypeScript knowledge
+- Basic React concepts understanding
+- roblox-ts development environment
+- npm or pnpm package manager
 
 ## Installation
 
-React-Lua is available through npm. Install it in your roblox-ts project:
+Install the core React dependencies:
 
 ```bash
-npm install @react-lua/react
+npm install @rbxts/react @rbxts/react-roblox
 # or
-pnpm add @react-lua/react
+pnpm add @rbxts/react @rbxts/react-roblox
+```
+
+For responsive UI and pixel-based sizing, install ui-scaler:
+
+```bash
+npm install @rbxts/ui-scaler
 ```
 
 ## Your First Component
 
-Create a simple component:
+Create a simple component following TypeScript and naming conventions:
 
-```lua
--- src/components/HelloWorld.tsx
-import React from "@react-lua/react"
+```typescript
+// src/components/hello-world/hello-world.tsx
+import React from "@rbxts/react"
 
-local function HelloWorld(props: { name: string })
-    return React.createElement("TextLabel", {
-        Text = "Hello, " .. props.name,
-        Size = UDim2.fromOffset(200, 50),
-        TextSize = 24
-    })
-end
+interface HelloWorldProps {
+  name: string
+}
 
-return HelloWorld
+const HelloWorld: React.FC<HelloWorldProps> = ({ name }) => {
+  return (
+    <textlabel
+      Text={`Hello, ${name}`}
+      Size={new UDim2(0, 200, 0, 50)}
+      TextSize={24}
+    />
+  )
+}
+
+export default HelloWorld
 ```
 
-## Rendering
+**File Structure:** `src/components/hello-world/hello-world.tsx`
+- **Folder:** kebab-case (`hello-world`)
+- **Component:** PascalCase in code (`HelloWorld`)
+- **File:** kebab-case (`hello-world.tsx`)
 
-To render a React component in Roblox:
+## Barrel Export Pattern
 
-```lua
--- src/client/init.client.tsx
-import React from "@react-lua/react"
-import ReactRoblox from "@react-lua/react-roblox"
-import App from "../components/App"
+Create an `index.ts` file for cleaner imports throughout your project:
 
-local root = ReactRoblox.createRoot(game.Players.LocalPlayer:WaitForChild("PlayerGui"))
-root:render(React.createElement(App))
+```typescript
+// src/components/hello-world/index.ts
+export { default as HelloWorld } from "./hello-world"
 ```
 
-## State with Hooks
+Now import without the deep path:
 
-Create a component with state:
-
-```lua
--- src/components/Counter.tsx
-import React, { useState } from "@react-lua/react"
-
-local function Counter()
-    local count, setCount = React.useState(0)
-    
-    return React.createElement("Frame", {
-        Size = UDim2.fromOffset(300, 100),
-        BackgroundColor3 = Color3.fromRGB(240, 240, 240)
-    },
-        React.createElement("TextLabel", {
-            Text = "Count: " .. tostring(count),
-            Size = UDim2.fromScale(1, 0.5),
-            TextSize = 20
-        }),
-        React.createElement("TextButton", {
-            Text = "Increment",
-            Size = UDim2.fromScale(1, 0.5),
-            Position = UDim2.fromScale(0, 0.5),
-            [React.Event.Activated] = function()
-                setCount(count + 1)
-            end
-        })
-    )
-end
-
-return Counter
+```typescript
+import { HelloWorld } from "@/components/hello-world"
+// Instead of: import HelloWorld from "@/components/hello-world/hello-world"
 ```
+
+## Rendering Your Component
+
+Set up your root component in a LocalScript or require a Module from your main entry point:
+
+```typescript
+// src/client/init.client.tsx
+import React from "@rbxts/react"
+import { createRoot } from "@rbxts/react-roblox"
+import { App } from "@/components/app"
+
+const playerGui = game.Players.LocalPlayer.WaitForChild("PlayerGui") as Instance
+const root = createRoot(playerGui)
+
+root.render(<App />)
+```
+
+## Interactive State with Hooks
+
+Create an interactive component using the `useState` hook:
+
+```typescript
+// src/components/counter/counter.tsx
+import React, { useState } from "@rbxts/react"
+
+const Counter: React.FC = () => {
+  const [count, setCount] = useState(0)
+
+  return (
+    <frame
+      Size={new UDim2(0, 300, 0, 100)}
+      BackgroundColor3={new Color3(0.94, 0.94, 0.94)}
+    >
+      <textlabel
+        Text={`Count: ${count}`}
+        Size={new UDim2(1, 0, 0.5, 0)}
+        TextSize={20}
+      />
+      <textbutton
+        Text="Increment"
+        Size={new UDim2(1, 0, 0.5, 0)}
+        Position={new UDim2(0, 0, 0.5, 0)}
+        Event={{
+          Activated: () => setCount(count + 1),
+        }}
+      />
+    </frame>
+  )
+}
+
+export default Counter
+```
+
+**Key Points:**
+- `useState(0)` returns a tuple: `[value, setValue]`
+- Event handlers go in the `Event` object
+- Component names are always **PascalCase**
+- Files are always **kebab-case**
 
 ## Handling Events
 
-React uses special Roblox-specific event handlers:
+Use the `Event` prop object to handle Roblox events:
 
-```lua
-local function Button(props)
-    return React.createElement("TextButton", {
-        Text = props.label,
-        Size = UDim2.fromOffset(100, 50),
-        
-        -- Handle Activated event
-        [React.Event.Activated] = function(rbx)
-            print("Button clicked:", rbx.Name)
-            if props.onClick then
-                props.onClick()
-            end
-        end,
-        
-        -- Handle input events
-        [React.Event.InputBegan] = function(rbx, input, gameProcessed)
-            if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton1 then
-                print("Mouse button 1 pressed")
-            end
-        end
-    })
-end
+```typescript
+// src/components/custom-button/custom-button.tsx
+import React from "@rbxts/react"
+
+interface CustomButtonProps {
+  label: string
+  onClick?: () => void
+}
+
+const CustomButton: React.FC<CustomButtonProps> = ({ label, onClick }) => {
+  return (
+    <textbutton
+      Text={label}
+      Size={new UDim2(0, 100, 0, 50)}
+      Event={{
+        Activated: onClick,
+        InputBegan: (rbx, input) => {
+          if (input.UserInputType === Enum.UserInputType.MouseButton1) {
+            print("Mouse button 1 pressed on", rbx.Name)
+          }
+        },
+      }}
+    />
+  )
+}
+
+export default CustomButton
 ```
 
 ## Effects and Side Effects
 
-Use `useEffect` for side effects like connections:
+Use `useEffect` to run code when the component mounts or updates:
 
-```lua
-local UserInputService = game:GetService("UserInputService")
+```typescript
+// src/components/keyboard-listener/keyboard-listener.tsx
+import React, { useState, useEffect } from "@rbxts/react"
+import { UserInputService } from "@rbxts/services"
 
-local function KeyboardListener(props)
-    local lastKey, setLastKey = React.useState(nil)
-    
-    React.useEffect(function()
-        local connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-            if not gameProcessed then
-                setLastKey(tostring(input.KeyCode))
-            end
-        end)
-        
-        -- Cleanup function - runs when component unmounts
-        return function()
-            connection:Disconnect()
-        end
-    end, {})
-    
-    return React.createElement("TextLabel", {
-        Text = "Last key: " .. (lastKey or "None"),
-        Size = UDim2.fromOffset(200, 50)
+const KeyboardListener: React.FC = () => {
+  const [lastKey, setLastKey] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    const connection = UserInputService.InputBegan.Connect((input, gameProcessed) => {
+      if (!gameProcessed) {
+        setLastKey(tostring(input.KeyCode))
+      }
     })
-end
 
-return KeyboardListener
+    // Cleanup function - disconnects when component unmounts
+    return () => {
+      connection.Disconnect()
+    }
+  }, []) // Empty dependency array = run once on mount
+
+  return (
+    <textlabel
+      Text={`Last key: ${lastKey ?? "None"}`}
+      Size={new UDim2(0, 200, 0, 50)}
+    />
+  )
+}
+
+export default KeyboardListener
 ```
 
 ## Props and Children
 
-Pass data through props:
+Pass data through props and render child components:
 
-```lua
--- Container component
-local function Card(props)
-    return React.createElement("Frame", {
-        Size = props.size or UDim2.fromOffset(400, 300),
-        BackgroundColor3 = props.backgroundColor or Color3.new(1, 1, 1)
-    },
-        React.createElement("TextLabel", {
-            Text = props.title,
-            Size = UDim2.fromScale(1, 0.1)
-        }),
-        React.createElement("Frame", {
-            Size = UDim2.fromScale(1, 0.9),
-            Position = UDim2.fromScale(0, 0.1),
-            -- props.children contains child elements
-            children = props.children
-        })
-    )
-end
+```typescript
+// src/components/card/card.tsx
+import React from "@rbxts/react"
 
--- Usage
-React.createElement(Card, {
-    title = "My Card",
-    size = UDim2.fromOffset(500, 400)
-},
-    React.createElement("TextLabel", { Text = "Content here" })
-)
+interface CardProps {
+  title: string
+  size?: UDim2
+  backgroundColor?: Color3
+  children?: React.ReactNode
+}
+
+const Card: React.FC<CardProps> = ({
+  title,
+  size = new UDim2(0, 400, 0, 300),
+  backgroundColor = new Color3(1, 1, 1),
+  children,
+}) => {
+  return (
+    <frame
+      Size={size}
+      BackgroundColor3={backgroundColor}
+    >
+      <textlabel
+        Text={title}
+        Size={new UDim2(1, 0, 0.1, 0)}
+        TextSize={18}
+      />
+      <frame
+        Size={new UDim2(1, 0, 0.9, 0)}
+        Position={new UDim2(0, 0, 0.1, 0)}
+        BackgroundTransparency={1}
+      >
+        {children}
+      </frame>
+    </frame>
+  )
+}
+
+export default Card
 ```
 
-## Building Your App Structure
+## Responsive Sizing with usePx
 
-Follow this recommended folder structure:
+Use the `usePx` hook from `@rbxts/ui-scaler` for consistent pixel-based scaling:
+
+```typescript
+// src/components/responsive-box/responsive-box.tsx
+import React from "@rbxts/react"
+import { usePx } from "@rbxts/ui-scaler"
+
+const ResponsiveBox: React.FC = () => {
+  const px = usePx()
+
+  return (
+    <frame
+      Size={new UDim2(1, 0, 1, 0)}
+      BackgroundColor3={new Color3(1, 1, 1)}
+    >
+      <uipadding
+        PaddingTop={px(16)}
+        PaddingBottom={px(16)}
+        PaddingLeft={px(16)}
+        PaddingRight={px(16)}
+      />
+      <textlabel
+        Text="Responsive Box"
+        Size={new UDim2(1, 0, 0, px(40))}
+        TextSize={px(16)}
+      />
+    </frame>
+  )
+}
+
+export default ResponsiveBox
+```
+
+**Note:** Always use `usePx()` from `@rbxts/ui-scaler` for pixel values - don't use alternative approaches like manual calculations or ratio-based sizing for pixel measurements.
+
+## Recommended Project Structure
+
+Follow this proven folder structure for scalability:
 
 ```
 src/
-├── components/          # Reusable UI components
-│   ├── Button.tsx
-│   ├── Card.tsx
-│   └── Layout.tsx
-├── hooks/              # Custom React hooks
-│   ├── useForm.ts
-│   └── useTheme.ts
-├── pages/              # Top-level page components
-│   └── Home.tsx
-├── utils/              # Utility functions
-│   └── formatting.ts
-├── types/              # Type definitions
-│   └── models.ts
+├── components/
+│   ├── common/                 # Reusable UI components
+│   │   ├── button/
+│   │   │   ├── button.tsx
+│   │   │   └── index.ts
+│   │   ├── card/
+│   │   │   ├── card.tsx
+│   │   │   └── index.ts
+│   │   └── index.ts
+│   ├── layouts/
+│   │   ├── app-layout/
+│   │   │   ├── app-layout.tsx
+│   │   │   └── index.ts
+│   │   └── index.ts
+│   └── pages/
+│       ├── home-page/
+│       │   ├── home-page.tsx
+│       │   └── index.ts
+│       └── index.ts
+├── hooks/                      # Custom hooks
+│   ├── use-form-input.ts
+│   ├── use-fetch.ts
+│   └── index.ts
+├── context/                    # Context providers
+│   ├── theme-context.ts
+│   ├── user-context.ts
+│   └── index.ts
+├── types/                      # Type definitions
+│   ├── models.ts
+│   └── api.ts
+├── utils/                      # Utility functions
+│   ├── formatting.ts
+│   └── validation.ts
+├── constants/                  # Constants
+│   └── colors.ts
+├── app.tsx                     # Root component
 └── client/
-    └── init.client.tsx  # Entry point
+    └── init.client.tsx         # Entry point
 ```
+
+See [Project Structure](./project-structure.md) for a detailed guide on organizing larger applications.
 
 ## Component Best Practices
 
-1. **Keep components focused** - Each component should do one thing
-2. **Use props for configuration** - Make components reusable
+1. **Keep components focused** - One responsibility per component
+2. **Use props for configuration** - Make components reusable and composable
 3. **Extract custom hooks** - Share stateful logic between components
-4. **Use TypeScript** - Get better type safety and IDE support
-5. **Separate concerns** - Keep UI, logic, and data separate
+4. **Leverage TypeScript** - Use types and interfaces for better safety
+5. **Separate concerns** - Keep UI, logic, and state separated
+6. **Use PascalCase for components** - Always, without exception
+7. **Use kebab-case for files and folders** - Always, without exception
 
 ## Next Steps
 
+- Review [Project Structure Guide](./project-structure.md) for detailed organizational patterns
 - Learn [Core API Concepts](../api/core.md)
-- Explore [Hooks in detail](../api/hooks.md)
-- Review [Advanced patterns](../api/advanced.md)
-- Study [real-world examples](../examples/)
+- Explore [Hooks in Detail](../api/hooks.md)
+- Study [Real-World Examples](../examples/)
 
 ---
 
 **Official References**:
-- React-Lua: https://react.luau.page/
-- React Concepts: https://reactjs.org/docs/hello-world.html
+- [React Concepts](https://react.dev) - Learn React fundamentals
+- [roblox-ts Documentation](https://roblox-ts.com/docs)
+- [@rbxts/react](https://github.com/littensy/rbxts-react)
+- [@rbxts/react-roblox](https://github.com/littensy/rbxts-react-roblox)
+- [@rbxts/ui-scaler](https://github.com/littensy/rbxts-ui-scaler)
