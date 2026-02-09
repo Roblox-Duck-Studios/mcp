@@ -74,7 +74,6 @@ async def get_class(className: str) -> str:
 
 
 def main():
-    # Initialize and run the server
     mcp.run(transport="stdio")
 
 
