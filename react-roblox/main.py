@@ -1,4 +1,4 @@
-"""React-Lua documentation MCP server."""
+"""React Roblox documentation MCP server."""
 
 import re
 from pathlib import Path
@@ -7,23 +7,24 @@ from mcp.server.fastmcp import FastMCP
 
 # Documentation directory
 DOCS_DIR = Path(__file__).parent / "docs"
+README_PATH = Path(__file__).parent / "README.md"
 
 # Documentation structure - maps key to local file path
 DOC_PATHS = {
-    # API Reference
-    "coreApi": "api/core.md",
-    "hooks": "api/hooks.md",
-    "contextApi": "api/context.md",
-    "advancedApi": "api/advanced.md",
-    # Guides
+    # Main
+    "readme": str(README_PATH),
     "gettingStarted": "guides/getting-started.md",
-    "componentPatterns": "guides/components.md",
-    "projectStructure": "guides/project-structure.md",
-    # Examples
-    "counterExample": "examples/counter.md",
-    "formExample": "examples/form.md",
-    "slitherProject": "examples/project-slither.md",
-    "uiLabsProject": "examples/project-ui-labs.md",
+    # Guides
+    "components": "guides/components.md",
+    "stories": "guides/stories.md",
+    "pixelScaling": "guides/pixel-scaling.md",
+    # API Reference
+    "core": "api/core.md",
+    "ripple": "api/ripple.md",
+    "prettyHooks": "api/pretty-hooks.md",
+    "lifetime": "api/lifetime.md",
+    "ultimateList": "api/ultimate-list.md",
+    "robloxApis": "api/roblox-apis.md",
 }
 
 mcp = FastMCP("react-roblox")
@@ -31,7 +32,11 @@ mcp = FastMCP("react-roblox")
 
 def get_doc_content(file_path: str) -> str:
     """Load documentation content from local file."""
-    full_path = DOCS_DIR / file_path
+    # Handle absolute paths (like README)
+    if file_path.startswith("/"):
+        full_path = Path(file_path)
+    else:
+        full_path = DOCS_DIR / file_path
 
     if not full_path.exists():
         raise Exception(f"Documentation file not found: {file_path}")
@@ -41,13 +46,6 @@ def get_doc_content(file_path: str) -> str:
             return f.read()
     except IOError as e:
         raise Exception(f"Failed to read documentation: {file_path} - {str(e)}")
-
-
-def extract_headings(content: str) -> list[str]:
-    """Extract headings from markdown content."""
-    pattern = r"^#{1,6}\s+(.+)$"
-    matches = re.findall(pattern, content, re.MULTILINE)
-    return matches
 
 
 def extract_code_examples(content: str) -> list[dict]:
@@ -62,9 +60,16 @@ def extract_code_examples(content: str) -> list[dict]:
     return examples
 
 
+def extract_headings(content: str) -> list[str]:
+    """Extract headings from markdown content."""
+    pattern = r"^#{1,6}\s+(.+)$"
+    matches = re.findall(pattern, content, re.MULTILINE)
+    return matches
+
+
 @mcp.tool()
 def get_documentation(doc_key: str) -> str:
-    """Fetch specific React-Lua documentation content by key."""
+    """Fetch specific React Roblox documentation content by key."""
     if doc_key not in DOC_PATHS:
         return f"Documentation not found: {doc_key}"
 
@@ -77,33 +82,76 @@ def get_documentation(doc_key: str) -> str:
 
 
 @mcp.tool()
-def list_documentation() -> str:
-    """List all available React-Lua documentation pages with metadata."""
-    output = "# Available React-Lua Documentation\n\n"
-
-    # Group by category
-    categories = {
-        "api": [],
-        "guides": [],
-        "examples": [],
-    }
+def search_documentation(query: str) -> str:
+    """Search React Roblox documentation for specific topics or keywords."""
+    results = []
+    query_lower = query.lower()
 
     for key, path in DOC_PATHS.items():
-        category = path.split("/")[0]
+        try:
+            content = get_doc_content(path)
+            content_lower = content.lower()
+
+            if query_lower in content_lower:
+                matches = content_lower.count(query_lower)
+                index = content_lower.find(query_lower)
+                start = max(0, index - 100)
+                end = min(len(content), index + 200)
+                snippet = "..." + content[start:end] + "..."
+
+                results.append(
+                    {"path": path, "key": key, "snippet": snippet, "matches": matches}
+                )
+        except Exception:
+            continue
+
+    if not results:
+        return f'No results found for query: "{query}"'
+
+    results.sort(key=lambda x: x["matches"], reverse=True)
+
+    output = f'# Search Results for "{query}"\n\n'
+    output += f"Found {len(results)} result(s):\n\n"
+
+    for i, result in enumerate(results, 1):
+        output += f"## Result {i} (Matches: {result['matches']})\n"
+        output += f"**Path:** {result['path']}\n"
+        output += f"**Key:** {result['key']}\n\n"
+        output += f"{result['snippet']}\n\n---\n\n"
+
+    return output
+
+
+@mcp.tool()
+def list_documentation() -> str:
+    """List all available React Roblox documentation pages with metadata."""
+    output = "# Available React Roblox Documentation\n\n"
+
+    # Group by category
+    categories = {}
+    for key, path in DOC_PATHS.items():
+        path_parts = path.replace(str(README_PATH), "main").split("/")
+        category = path_parts[0] if len(path_parts) > 1 else "main"
         title = re.sub(r"([A-Z])", r" \1", key).strip()
 
-        categories[category].append({"key": key, "path": path, "title": title})
+        if category not in categories:
+            categories[category] = []
 
-    # Output by category
-    category_names = {"api": "API Reference", "guides": "Guides", "examples": "Examples"}
+        categories[category].append(
+            {
+                "key": key,
+                "path": path,
+                "title": title,
+                "description": f"React Roblox documentation: {title}",
+            }
+        )
 
-    for cat_key in ["api", "guides", "examples"]:
-        items = categories[cat_key]
-        if items:
-            output += f"## {category_names[cat_key]}\n\n"
-            for item in items:
-                output += f"- **{item['title']}** (`{item['key']}`)\n"
-                output += f"  Path: {item['path']}\n\n"
+    for category, docs in sorted(categories.items()):
+        output += f"## {category.title()}\n\n"
+        for doc in docs:
+            output += f"- **{doc['title']}** (`{doc['key']}`)\n"
+            output += f"  Path: {doc['path']}\n"
+            output += f"  {doc['description']}\n\n"
 
     return output
 
@@ -160,44 +208,41 @@ def get_documentation_outline(doc_key: str) -> str:
 
 
 @mcp.tool()
-def search_documentation(query: str) -> str:
-    """Search React-Lua documentation for specific topics or keywords."""
+def search_code_examples(query: str) -> str:
+    """Search for code examples across all documentation."""
     results = []
     query_lower = query.lower()
 
     for key, path in DOC_PATHS.items():
         try:
             content = get_doc_content(path)
-            content_lower = content.lower()
+            examples = extract_code_examples(content)
 
-            if query_lower in content_lower:
-                # Count matches
-                matches = content_lower.count(query_lower)
-
-                # Find snippet around first match
-                index = content_lower.find(query_lower)
-                start = max(0, index - 100)
-                end = min(len(content), index + 200)
-                snippet = "..." + content[start:end] + "..."
-
-                results.append({"path": path, "key": key, "snippet": snippet, "matches": matches})
+            for i, example in enumerate(examples, 1):
+                if query_lower in example["code"].lower():
+                    results.append(
+                        {
+                            "doc_key": key,
+                            "example_num": i,
+                            "language": example["language"],
+                            "code": example["code"][:300] + "..."
+                            if len(example["code"]) > 300
+                            else example["code"],
+                        }
+                    )
         except Exception:
             continue
 
     if not results:
-        return f'No results found for query: "{query}"'
+        return f'No code examples found for query: "{query}"'
 
-    # Sort by relevance
-    results.sort(key=lambda x: x["matches"], reverse=True)
-
-    output = f'# Search Results for "{query}"\n\n'
-    output += f"Found {len(results)} result(s):\n\n"
+    output = f'# Code Examples Matching "{query}"\n\n'
+    output += f"Found {len(results)} example(s):\n\n"
 
     for i, result in enumerate(results, 1):
-        output += f"## Result {i} (Matches: {result['matches']})\n"
-        output += f"**Path:** {result['path']}\n"
-        output += f"**Key:** {result['key']}\n\n"
-        output += f"{result['snippet']}\n\n---\n\n"
+        output += f"## Example {i} from {result['doc_key']}\n"
+        output += f"**Language:** {result['language']}\n\n"
+        output += f"```{result['language']}\n{result['code']}\n```\n\n---\n\n"
 
     return output
 
