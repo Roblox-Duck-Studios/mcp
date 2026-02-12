@@ -15,4 +15,5 @@ members = [
     "docs",
     "react-roblox",
     "roblox-ts",
+    "roblox-jest",
 ]

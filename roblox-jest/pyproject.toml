@@ -1,0 +1,9 @@
+[project]
+name = "roblox-jest"
+version = "0.1.0"
+description = "Roblox Jest testing framework documentation"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mcp[cli]>=1.26.0",
+]
